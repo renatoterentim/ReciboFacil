@@ -3,9 +3,9 @@ namespace ReciboFacil.Shared;
 public static class Constantes
 {
     public const string Programa = "ReciboFacil";
-    public const string VersaoApp = "1.0.0-etapa1";
+    public const string VersaoApp = "1.1.0-etapa2";
     // Sobe quando a comunicação cliente/servidor muda de forma incompatível.
-    public const int Versao = 1;
+    public const int Versao = 2;
     public const string Administrador = "Administrador";
     public const string Operador = "Operador";
 }
@@ -100,4 +100,69 @@ public class ContatoDto
     public string ChavePix { get; set; } = "";
     public string Observacoes { get; set; } = "";
     public bool Ativo { get; set; } = true;
+}
+
+public class ReciboCriarReq
+{
+    public int EmissorId { get; set; }
+    public int ContatoId { get; set; }
+    // PAGAMENTO: o emissor paga ao contato. RECEBIMENTO: o emissor recebe do contato.
+    public string Sentido { get; set; } = "PAGAMENTO";
+    public long ValorCentavos { get; set; }
+    public string Referente { get; set; } = "";
+    public string Data { get; set; } = "";      // yyyy-MM-dd
+    public string Cidade { get; set; } = "";
+    public int? DuplicadoDe { get; set; }
+}
+
+public class ReciboDto
+{
+    public int Numero { get; set; }
+    public string Sentido { get; set; } = "PAGAMENTO";
+    public int EmissorId { get; set; }
+    public int ContatoId { get; set; }
+    // Cópia dos dados no momento da emissão (não muda se o cadastro for alterado depois).
+    public EmissorDto Emissor { get; set; } = new();
+    public ContatoDto Contato { get; set; } = new();
+    public long ValorCentavos { get; set; }
+    public string ValorExtenso { get; set; } = "";
+    public string Referente { get; set; } = "";
+    public string Data { get; set; } = "";
+    public string Cidade { get; set; } = "";
+    public string EmitidoEm { get; set; } = "";
+    public string EmitidoPor { get; set; } = "";
+    public bool Cancelado { get; set; }
+    public string CanceladoEm { get; set; } = "";
+    public string CanceladoPor { get; set; } = "";
+    public string Motivo { get; set; } = "";
+    public int? DuplicadoDe { get; set; }
+}
+
+public class ReciboResumoDto
+{
+    public int Numero { get; set; }
+    public string Data { get; set; } = "";
+    public string Sentido { get; set; } = "";
+    public string EmissorNome { get; set; } = "";
+    public string ContatoNome { get; set; } = "";
+    public string ContatoDocumento { get; set; } = "";
+    public long ValorCentavos { get; set; }
+    public string Referente { get; set; } = "";
+    public bool Cancelado { get; set; }
+    public string EmitidoPor { get; set; } = "";
+}
+
+public class CancelarReq
+{
+    public string Motivo { get; set; } = "";
+}
+
+public class NumeroReq
+{
+    public int Numero { get; set; }
+}
+
+public class ProximoNumeroDto
+{
+    public int Proximo { get; set; }
 }

@@ -69,6 +69,51 @@ CREATE TABLE auditoria (
   entidade_id INTEGER,
   detalhe TEXT NOT NULL DEFAULT ''
 );
+",
+        // 2 - Etapa 2: recibos (numeração sequencial que nunca volta, dados congelados, sem edição/exclusão)
+        @"
+CREATE TABLE recibos (
+  numero INTEGER PRIMARY KEY AUTOINCREMENT,
+  sentido TEXT NOT NULL,
+  emissor_id INTEGER NOT NULL REFERENCES emissores(id),
+  contato_id INTEGER NOT NULL REFERENCES contatos(id),
+  emissor_nome TEXT NOT NULL,
+  contato_nome TEXT NOT NULL,
+  contato_documento TEXT NOT NULL DEFAULT '',
+  contato_documento_digitos TEXT NOT NULL DEFAULT '',
+  emissor_json TEXT NOT NULL,
+  contato_json TEXT NOT NULL,
+  valor_centavos INTEGER NOT NULL,
+  valor_extenso TEXT NOT NULL,
+  referente TEXT NOT NULL,
+  data_recibo TEXT NOT NULL,
+  cidade TEXT NOT NULL DEFAULT '',
+  emitido_em TEXT NOT NULL,
+  emitido_por_id INTEGER,
+  emitido_por_login TEXT NOT NULL,
+  duplicado_de INTEGER,
+  cancelado INTEGER NOT NULL DEFAULT 0,
+  cancelado_em TEXT,
+  cancelado_por_id INTEGER,
+  cancelado_por_login TEXT,
+  motivo_cancelamento TEXT
+);
+CREATE INDEX ix_recibos_data ON recibos(data_recibo);
+CREATE INDEX ix_recibos_emissor ON recibos(emissor_id);
+CREATE INDEX ix_recibos_contato ON recibos(contato_id);
+INSERT INTO sqlite_sequence(name, seq) VALUES('recibos', 0);
+CREATE TRIGGER recibos_sem_exclusao BEFORE DELETE ON recibos
+BEGIN
+  SELECT RAISE(ABORT, 'Recibos não podem ser apagados.');
+END;
+CREATE TRIGGER recibos_sem_alteracao BEFORE UPDATE ON recibos
+WHEN OLD.numero <> NEW.numero OR OLD.sentido <> NEW.sentido OR OLD.valor_centavos <> NEW.valor_centavos
+  OR OLD.valor_extenso <> NEW.valor_extenso OR OLD.referente <> NEW.referente OR OLD.data_recibo <> NEW.data_recibo
+  OR OLD.cidade <> NEW.cidade OR OLD.emissor_json <> NEW.emissor_json OR OLD.contato_json <> NEW.contato_json
+  OR OLD.emitido_em <> NEW.emitido_em OR OLD.cancelado = 1
+BEGIN
+  SELECT RAISE(ABORT, 'Recibo emitido não pode ser alterado.');
+END;
 "
     };
 

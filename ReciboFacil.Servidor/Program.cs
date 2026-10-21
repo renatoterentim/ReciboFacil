@@ -50,5 +50,6 @@ app.Use(async (ctx, next) =>
 
 EndpointsUsuarios.Mapear(app);
 EndpointsCadastros.Mapear(app);
+EndpointsRecibos.Mapear(app);
 
 app.Run();

@@ -92,6 +92,20 @@ public static class EndpointsCadastros
         return true;
     }
 
+    public static EmissorDto? EmissorPorId(SqliteConnection c, int id)
+    {
+        using var cmd = c.Cmd("SELECT " + ColsEmissor + " FROM emissores WHERE id=$id", ("$id", id));
+        using var r = cmd.ExecuteReader();
+        return r.Read() ? LerEmissor(r) : null;
+    }
+
+    public static ContatoDto? ContatoPorId(SqliteConnection c, int id)
+    {
+        using var cmd = c.Cmd("SELECT " + ColsContato + " FROM contatos WHERE id=$id", ("$id", id));
+        using var r = cmd.ExecuteReader();
+        return r.Read() ? LerContato(r) : null;
+    }
+
     public static void Mapear(WebApplication app)
     {
         // ---------- Emissores ----------

@@ -24,10 +24,21 @@ public abstract class Dialogo : Form
     void Rotulo(string texto, int yy) =>
         Controls.Add(new Label { Text = texto, Left = LX, Top = yy + 3, Width = CX - LX - 6, Height = 20, AutoSize = false });
 
-    protected void Nota(string texto, int altura = 36)
+    protected Label Nota(string texto, int altura = 36)
     {
-        Controls.Add(new Label { Text = texto, Left = LX, Top = y, Width = CX + CW - LX, Height = altura, AutoSize = false });
+        var l = new Label { Text = texto, Left = LX, Top = y, Width = CX + CW - LX, Height = altura, AutoSize = false };
+        Controls.Add(l);
         y += altura + 6;
+        return l;
+    }
+
+    protected DateTimePicker Data(string rotulo)
+    {
+        Rotulo(rotulo, y);
+        var d = new DateTimePicker { Left = CX, Top = y, Width = 140, Format = DateTimePickerFormat.Short };
+        Controls.Add(d);
+        y += 30;
+        return d;
     }
 
     protected TextBox Texto(string rotulo, int max = 200, bool senha = false)

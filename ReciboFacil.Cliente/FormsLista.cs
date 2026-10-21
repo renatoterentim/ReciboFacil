@@ -37,11 +37,16 @@ public class ContatosForm : Form
     readonly Button btnEditar = UiLista.Botao("Editar");
     readonly Button btnAtivo = UiLista.Botao("Inativar", 100);
     readonly System.Windows.Forms.Timer timer = new() { Interval = 300 };
+    readonly bool _selecionar;
     int versao;
 
-    public ContatosForm()
+    // Preenchido quando a janela é aberta em modo de seleção (usado ao emitir recibos).
+    public ContatoDto? Escolhido { get; private set; }
+
+    public ContatosForm(bool selecionar = false)
     {
-        UiLista.Preparar(this, "Contatos", 1000, 560);
+        _selecionar = selecionar;
+        UiLista.Preparar(this, selecionar ? "Selecionar contato" : "Contatos", 1000, 560);
 
         var topo = UiLista.Barra(DockStyle.Top, 42);
         var lblBusca = new Label { Text = "Buscar:", AutoSize = true, Margin = new Padding(3, 9, 3, 3) };
@@ -51,6 +56,12 @@ public class ContatosForm : Form
         var btnNovo = UiLista.Botao("Novo contato");
         var btnFechar = UiLista.Botao("Fechar", 90);
         btnFechar.DialogResult = DialogResult.Cancel;
+        if (selecionar)
+        {
+            var btnSel = UiLista.Botao("Selecionar", 110);
+            btnSel.Click += (s, e) => Escolher();
+            rodape.Controls.Add(btnSel);
+        }
         rodape.Controls.AddRange(new Control[] { btnNovo, btnEditar, btnAtivo, btnFechar });
 
         Controls.Add(lista);
@@ -63,7 +74,7 @@ public class ContatosForm : Form
         txtBusca.TextChanged += (s, e) => { timer.Stop(); timer.Start(); };
         chkInativos.CheckedChanged += (s, e) => Carregar();
         lista.SelectedIndexChanged += (s, e) => AtualizarBotoes();
-        lista.DoubleClick += (s, e) => EditarSelecionado();
+        lista.DoubleClick += (s, e) => { if (_selecionar) Escolher(); else EditarSelecionado(); };
         btnNovo.Click += (s, e) => Abrir(null);
         btnEditar.Click += (s, e) => EditarSelecionado();
         btnAtivo.Click += (s, e) => AlternarAtivo();
@@ -112,6 +123,15 @@ public class ContatosForm : Form
     {
         var c = Selecionado();
         if (c != null) Abrir(c);
+    }
+
+    void Escolher()
+    {
+        var c = Selecionado();
+        if (c == null) { Erros.Aviso(this, "Selecione um contato na lista."); return; }
+        if (!c.Ativo) { Erros.Aviso(this, "Este contato está inativo. Reative-o antes de usá-lo em um recibo."); return; }
+        Escolhido = c;
+        DialogResult = DialogResult.OK;
     }
 
     void Abrir(ContatoDto? c)

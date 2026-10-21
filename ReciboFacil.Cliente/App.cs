@@ -7,6 +7,7 @@ public class ConfigCliente
 {
     public string Servidor { get; set; } = "http://localhost:5180";
     public bool Configurado { get; set; }
+    public int UltimoEmissorId { get; set; }
 
     static string Caminho => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ReciboFacil", "cliente.json");

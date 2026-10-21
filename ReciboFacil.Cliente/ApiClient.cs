@@ -110,4 +110,49 @@ public class ApiClient
     public Task<ContatoDto> CriarContato(ContatoDto d, bool forcar) => Enviar<ContatoDto>(HttpMethod.Post, "api/contatos?forcar=" + B(forcar), d);
     public Task<ContatoDto> EditarContato(int id, ContatoDto d, bool forcar) => Enviar<ContatoDto>(HttpMethod.Put, "api/contatos/" + id + "?forcar=" + B(forcar), d);
     public Task<List<string>> Ocupacoes() => Obter<List<string>>("api/ocupacoes");
+
+    // ---- Recibos ----
+    public Task<ReciboDto> CriarRecibo(ReciboCriarReq r) => Enviar<ReciboDto>(HttpMethod.Post, "api/recibos", r);
+    public Task<List<ReciboResumoDto>> ListarRecibos(FiltroRecibos f) => Obter<List<ReciboResumoDto>>("api/recibos" + f.ToQuery());
+    public Task<ReciboDto> ObterRecibo(int numero) => Obter<ReciboDto>("api/recibos/" + numero);
+    public Task<ReciboDto> CancelarRecibo(int numero, string motivo) =>
+        Enviar<ReciboDto>(HttpMethod.Post, "api/recibos/" + numero + "/cancelar", new CancelarReq { Motivo = motivo });
+    public Task RegistrarVia(int numero) => Raw(HttpMethod.Post, "api/recibos/" + numero + "/via");
+    public Task<ProximoNumeroDto> ProximoNumero() => Obter<ProximoNumeroDto>("api/recibos/proximo-numero");
+    public Task<ProximoNumeroDto> DefinirProximoNumero(int numero) =>
+        Enviar<ProximoNumeroDto>(HttpMethod.Post, "api/recibos/proximo-numero", new NumeroReq { Numero = numero });
+}
+
+public class FiltroRecibos
+{
+    public int? Numero { get; set; }
+    public string? De { get; set; }
+    public string? Ate { get; set; }
+    public int? EmissorId { get; set; }
+    public string Contato { get; set; } = "";
+    public string Documento { get; set; } = "";
+    public string Descricao { get; set; } = "";
+    public long? ValorMin { get; set; }
+    public long? ValorMax { get; set; }
+    public bool IncluirCancelados { get; set; }
+
+    public string ToQuery()
+    {
+        var p = new List<string>();
+        void Add(string chave, string? valor)
+        {
+            if (!string.IsNullOrEmpty(valor)) p.Add(chave + "=" + Uri.EscapeDataString(valor));
+        }
+        Add("numero", Numero?.ToString());
+        Add("de", De);
+        Add("ate", Ate);
+        Add("emissorId", EmissorId?.ToString());
+        Add("contato", Contato);
+        Add("documento", Documento);
+        Add("descricao", Descricao);
+        Add("valorMin", ValorMin?.ToString());
+        Add("valorMax", ValorMax?.ToString());
+        Add("cancelados", IncluirCancelados ? "true" : "false");
+        return p.Count == 0 ? "" : "?" + string.Join("&", p);
+    }
 }
