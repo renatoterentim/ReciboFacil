@@ -57,5 +57,6 @@ EndpointsUsuarios.Mapear(app);
 EndpointsCadastros.Mapear(app);
 EndpointsRecibos.Mapear(app);
 EndpointsBackup.Mapear(app);
+EndpointsLicenca.Mapear(app);
 
 app.Run();

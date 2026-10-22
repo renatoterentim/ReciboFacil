@@ -1,3 +1,35 @@
+# ReciboFácil — versão 2.1.1 (licenças)
+
+## Novidades da 2.1.1
+
+- No plano grátis, inativar um emissor **não** libera vaga para outro: só **excluir**. Novo botão **Excluir** em Cadastros → Emissores (exclusão lógica: some das telas, mas os recibos antigos e o filtro do histórico continuam funcionando; no filtro aparece "(excluído)").
+
+## Novidades da 2.1.0 — Licença
+
+**Plano "Licença pessoal grátis" (sem arquivo, para sempre):** acesso completo ao programa, com **1 emissor, pessoa física (CPF)**. Emissor inativo também conta; para usar outro, é preciso **excluir** o atual (Cadastros → Emissores → Excluir; os recibos já emitidos continuam no histórico).
+**Com licença** (arquivo `.rflic` anual ou mensal): vários emissores e emissor com CNPJ.
+
+- Menu **Administração → Licença**: mostra o estado, a validade, o **código da instalação** (o cliente envia a você) e o botão para carregar o arquivo.
+  A barra inferior mostra "Licença até dd/mm/aaaa" (vermelho quando falta pouco: 15 dias na anual, 5 na mensal). O administrador é avisado ao abrir o programa.
+- A licença é carregada **uma vez no servidor** e vale para todos os computadores.
+- **Vencimento:** 7 dias de tolerância (tudo continua funcionando, com aviso). Depois volta ao plano grátis: só o primeiro emissor CPF ativo emite recibos
+  (os demais aparecem como "requer licença"). **Nada é apagado**: histórico, 2ª via, backup e restauração continuam funcionando.
+- A licença fica no arquivo `Dados\licenca.rflic`. O código da instalação fica no banco, então continua o mesmo ao restaurar um backup.
+- O programa detecta data do Windows voltada para trás (a data de hoje nunca recua).
+
+### Como o desenvolvedor gera licenças (passo a passo)
+
+1. Suba esta versão ao GitHub (inclusive a pasta nova `ReciboFacil.Licencas` e o `build.bat`; atualize também o `.github/workflows/compilar.yml` pelo site) e espere o build.
+2. Em *Actions → Artifacts*, baixe **GeradorLicenca** (só para você; **nunca** entregue a ninguém) e extraia o `GeradorLicenca.exe` numa pasta sua.
+3. Abra o `GeradorLicenca.exe` → opção **1 (Criar minhas chaves)**. Ele cria `chave-privada.txt` (SECRETA: faça cópia de segurança, não envie nem suba ao GitHub) e `chave-publica.txt`.
+4. Suba o `chave-publica.txt` para a pasta `ReciboFacil.Servidor` do GitHub, **substituindo** o que já está lá, e espere o novo build. Instale a nova versão no servidor.
+5. Para cada cliente: ele abre Administração → Licença e envia o **código da instalação**. No gerador, opção **2**, informe nome, CPF/CNPJ, o código, tipo (A anual / M mensal)
+   e, se for renovação antecipada, o vencimento atual (os dias que sobram não se perdem). O arquivo `.rflic` sai na pasta `licencas` e o registro de tudo que foi emitido fica em `licencas-emitidas.csv`.
+6. Envie o `.rflic` ao cliente; ele carrega em Administração → Licença → Carregar arquivo.
+
+Se a chave privada for perdida, não será possível gerar licenças que o programa aceite (seria preciso criar novas chaves e distribuir uma versão nova).
+A licença é um controle comercial: quem tem conhecimento técnico pode tentar burlar. O código da instalação evita que um arquivo seja usado por outro cliente.
+
 # ReciboFácil — versão 2.0.5 (Etapa 3: backup, restauração e instalador)
 
 ## Novidades da 2.0.5

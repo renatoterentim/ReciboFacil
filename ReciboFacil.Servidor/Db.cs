@@ -142,6 +142,17 @@ WHEN OLD.numero <> NEW.numero OR OLD.sentido <> NEW.sentido OR OLD.valor_centavo
 BEGIN
   SELECT RAISE(ABORT, 'Recibo emitido não pode ser alterado.');
 END;
+",
+        // 5 - Licença: configurações gerais (id da instalação, última data vista)
+        @"
+CREATE TABLE configuracoes (
+  chave TEXT PRIMARY KEY,
+  valor TEXT NOT NULL
+);
+",
+        // 6 - Emissor excluído (exclusão lógica: preserva o histórico dos recibos)
+        @"
+ALTER TABLE emissores ADD COLUMN excluido INTEGER NOT NULL DEFAULT 0;
 "
     };
 

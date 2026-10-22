@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>GeradorLicenca</AssemblyName>
+    <RootNamespace>ReciboFacil.Licencas</RootNamespace>
+    <PublishSingleFile>true</PublishSingleFile>
+    <ApplicationIcon>icone.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ReciboFacil.Shared\ReciboFacil.Shared.csproj" />
+  </ItemGroup>
+</Project>

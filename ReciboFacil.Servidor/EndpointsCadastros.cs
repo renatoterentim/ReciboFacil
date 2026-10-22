@@ -6,7 +6,7 @@ namespace ReciboFacil.Servidor;
 
 public static class EndpointsCadastros
 {
-    const string ColsEmissor = "id, nome, documento, endereco, cidade, uf, telefone, email, observacoes, ativo";
+    const string ColsEmissor = "id, nome, documento, endereco, cidade, uf, telefone, email, observacoes, ativo, excluido";
     const string ColsContato = "id, nome, documento, telefone, telefone2, email, endereco, cidade, uf, ocupacao, chave_pix, observacoes, ativo";
 
     static string L(string? s) => (s ?? "").Trim();
@@ -15,7 +15,7 @@ public static class EndpointsCadastros
     {
         Id = r.GetInt32(0), Nome = r.GetString(1), Documento = r.GetString(2), Endereco = r.GetString(3),
         Cidade = r.GetString(4), Uf = r.GetString(5), Telefone = r.GetString(6), Email = r.GetString(7),
-        Observacoes = r.GetString(8), Ativo = r.GetInt32(9) == 1
+        Observacoes = r.GetString(8), Ativo = r.GetInt32(9) == 1, Excluido = r.GetInt32(10) == 1
     };
 
     static ContatoDto LerContato(SqliteDataReader r) => new()
@@ -109,13 +109,16 @@ public static class EndpointsCadastros
     public static void Mapear(WebApplication app)
     {
         // ---------- Emissores ----------
-        app.MapGet("/api/emissores", (bool? inativos) =>
+        app.MapGet("/api/emissores", (bool? inativos, bool? excluidos) =>
         {
             var lista = new List<EmissorDto>();
             using var c = Db.Abrir();
-            using var cmd = c.Cmd("SELECT " + ColsEmissor + " FROM emissores " + (inativos == true ? "" : "WHERE ativo=1 ") + "ORDER BY nome COLLATE NOCASE");
-            using var r = cmd.ExecuteReader();
-            while (r.Read()) lista.Add(LerEmissor(r));
+            var sit = LicencaServico.Situacao(c);
+            int idGratis = sit.Completa ? 0 : LicencaServico.IdEmissorGratis(c);
+            using (var cmd = c.Cmd("SELECT " + ColsEmissor + " FROM emissores " + (excluidos == true ? "" : inativos == true ? "WHERE excluido=0 " : "WHERE excluido=0 AND ativo=1 ") + "ORDER BY nome COLLATE NOCASE"))
+            using (var r = cmd.ExecuteReader())
+                while (r.Read()) lista.Add(LerEmissor(r));
+            foreach (var e in lista) e.Liberado = sit.Completa || e.Id == idGratis;
             return Results.Json(lista);
         });
 
@@ -126,6 +129,8 @@ public static class EndpointsCadastros
             var erro = PrepararEmissor(d, out var dig);
             if (erro != null) return Erro(400, "DADOS_INVALIDOS", erro);
             using var c = Db.Abrir();
+            var bloqueio = LicencaServico.ValidarEmissor(c, d, dig, null);
+            if (bloqueio != null) return Erro(403, "LICENCA_NECESSARIA", bloqueio);
             using var cmd = c.Cmd(
                 "INSERT INTO emissores(nome, documento, documento_digitos, endereco, cidade, uf, telefone, email, observacoes, ativo, criado_em, atualizado_em) " +
                 "VALUES($n,$doc,$dig,$e,$c,$u,$t,$m,$o,$a,$agora,$agora); SELECT last_insert_rowid();", ParamsEmissor(d, dig));
@@ -141,6 +146,11 @@ public static class EndpointsCadastros
             var erro = PrepararEmissor(d, out var dig);
             if (erro != null) return Erro(400, "DADOS_INVALIDOS", erro);
             using var c = Db.Abrir();
+            var antes = EmissorPorId(c, id);
+            if (antes == null || antes.Excluido) return Erro(404, "NAO_ENCONTRADO", "Emissor não encontrado.");
+            d.Id = id;
+            var bloqueio = LicencaServico.ValidarEmissor(c, d, dig, antes);
+            if (bloqueio != null) return Erro(403, "LICENCA_NECESSARIA", bloqueio);
             var ps = ParamsEmissor(d, dig).Append(("$id", (object?)id)).ToArray();
             using var cmd = c.Cmd(
                 "UPDATE emissores SET nome=$n, documento=$doc, documento_digitos=$dig, endereco=$e, cidade=$c, uf=$u, telefone=$t, email=$m, observacoes=$o, ativo=$a, atualizado_em=$agora WHERE id=$id", ps);
@@ -148,6 +158,21 @@ public static class EndpointsCadastros
             d.Id = id;
             Db.Auditar(c, S(ctx), "EDITAR", "emissor", id, d.Nome + (d.Ativo ? "" : " (inativo)"));
             return Results.Json(d);
+        });
+
+        // Exclusão lógica: o emissor some das telas e deixa de contar no limite do plano grátis;
+        // os recibos já emitidos continuam no histórico (com os dados congelados na emissão).
+        app.MapDelete("/api/emissores/{id:int}", (HttpContext ctx, int id) =>
+        {
+            var nao = ExigirAdmin(ctx);
+            if (nao != null) return nao;
+            using var c = Db.Abrir();
+            var e = EmissorPorId(c, id);
+            if (e == null || e.Excluido) return Erro(404, "NAO_ENCONTRADO", "Emissor não encontrado.");
+            using var cmd = c.Cmd("UPDATE emissores SET excluido=1, ativo=0, atualizado_em=$agora WHERE id=$id", ("$agora", Agora()), ("$id", id));
+            cmd.ExecuteNonQuery();
+            Db.Auditar(c, S(ctx), "EXCLUIR", "emissor", id, e.Nome);
+            return Results.Json(new { ok = true });
         });
 
         // ---------- Contatos ----------

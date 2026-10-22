@@ -158,6 +158,8 @@ public static class EndpointsRecibos
             var emissor = EndpointsCadastros.EmissorPorId(c, req.EmissorId);
             if (emissor == null) return Erro(404, "NAO_ENCONTRADO", "Emissor não encontrado.");
             if (!emissor.Ativo) return Erro(400, "DADOS_INVALIDOS", "O emissor está inativo.");
+            if (!LicencaServico.EmissorLiberado(c, LicencaServico.Situacao(c), emissor.Id))
+                return Erro(403, "LICENCA_NECESSARIA", "O emissor \"" + emissor.Nome + "\" precisa de licença ativa para emitir recibos. " + LicencaServico.MsgLimiteGratis);
             var contato = EndpointsCadastros.ContatoPorId(c, req.ContatoId);
             if (contato == null) return Erro(404, "NAO_ENCONTRADO", "Contato não encontrado.");
             if (!contato.Ativo) return Erro(400, "DADOS_INVALIDOS", "O contato está inativo. Reative-o em Cadastros → Contatos.");

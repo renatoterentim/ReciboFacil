@@ -12,6 +12,10 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.*" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Chave pública usada para conferir as licenças (gerada pelo GeradorLicenca; veja o LEIA-ME). -->
+    <EmbeddedResource Include="chave-publica.txt" LogicalName="chave-publica.txt" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\ReciboFacil.Shared\ReciboFacil.Shared.csproj" />
   </ItemGroup>
 </Project>

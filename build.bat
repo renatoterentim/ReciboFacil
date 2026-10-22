@@ -12,6 +12,12 @@ for %%R in (win-x64 win-x86) do (
   copy /y scripts\*.bat publicar\%%R\ >nul
 )
 
+rem --- Gerador de licencas (ferramenta so do desenvolvedor; NAO vai no instalador) ---
+echo.
+echo --- Publicando o gerador de licencas ---
+dotnet publish ReciboFacil.Licencas\GeradorLicenca.csproj -c Release -r win-x64 --self-contained true -o publicar\Gerador
+if errorlevel 1 exit /b 1
+
 rem --- Instaladores (precisam do Inno Setup 6; se nao estiver instalado, so pula) ---
 for /f "delims=" %%V in ('powershell -NoProfile -ExecutionPolicy Bypass -File scripts\versao.ps1') do set VERSAO=%%V
 set ISCC=

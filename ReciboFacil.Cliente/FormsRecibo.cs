@@ -195,11 +195,17 @@ public class ReciboForm : Dialogo
             {
                 var lista = await App.Api.ListarEmissores(false);
                 foreach (var em in lista)
-                    cmbEmissor.Items.Add(new Opcao<EmissorDto>(em, em.Nome + " - " + em.Documento));
+                    cmbEmissor.Items.Add(new Opcao<EmissorDto>(em, em.Nome + " - " + em.Documento + (em.Liberado ? "" : "  (requer licença)")));
                 int alvo = _modelo != null ? _modelo.EmissorId : App.Config.UltimoEmissorId;
                 for (int i = 0; i < cmbEmissor.Items.Count; i++)
                 {
                     if (cmbEmissor.Items[i] is Opcao<EmissorDto> o && o.Valor.Id == alvo) { cmbEmissor.SelectedIndex = i; break; }
+                }
+                if (cmbEmissor.SelectedIndex < 0)
+                {
+                    // sem preferência: escolhe o primeiro emissor liberado
+                    for (int i = 0; i < cmbEmissor.Items.Count; i++)
+                        if (cmbEmissor.Items[i] is Opcao<EmissorDto> o2 && o2.Valor.Liberado) { cmbEmissor.SelectedIndex = i; break; }
                 }
                 if (cmbEmissor.SelectedIndex < 0 && cmbEmissor.Items.Count > 0) cmbEmissor.SelectedIndex = 0;
                 if (lista.Count == 0)
@@ -339,6 +345,12 @@ public class ReciboForm : Dialogo
     void Visualizar()
     {
         if (!(cmbEmissor.SelectedItem is Opcao<EmissorDto> oe)) { Erros.Aviso(this, "Escolha o emissor."); return; }
+        if (!oe.Valor.Liberado)
+        {
+            Erros.Aviso(this, "Este emissor precisa de licença ativa para emitir recibos.\n\n" +
+                "No plano grátis só é possível emitir com um emissor pessoa física (CPF). Ative uma licença em Administração → Licença.");
+            return;
+        }
         if (_contato == null) { Erros.Aviso(this, "Escolha o contato (botão Selecionar)."); return; }
 
         var itens = new List<ReciboItemDto>();
@@ -547,9 +559,9 @@ public class HistoricoForm : Form
             try
             {
                 cmbEmissor.Items.Add(new Opcao<int>(0, "Todos os emissores"));
-                var emissores = await App.Api.ListarEmissores(true);
+                var emissores = await App.Api.ListarEmissores(true, true);
                 foreach (var em in emissores)
-                    cmbEmissor.Items.Add(new Opcao<int>(em.Id, em.Nome + (em.Ativo ? "" : " (inativo)")));
+                    cmbEmissor.Items.Add(new Opcao<int>(em.Id, em.Nome + (em.Excluido ? " (excluído)" : em.Ativo ? "" : " (inativo)")));
                 cmbEmissor.SelectedIndex = 0;
             }
             catch (Exception ex) { Erros.Mostrar(this, ex); }

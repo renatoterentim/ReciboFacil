@@ -101,9 +101,16 @@ public class ApiClient
     public Task Reativar(int id) => Raw(HttpMethod.Post, "api/usuarios/" + id + "/reativar");
 
     // ---- Emissores ----
-    public Task<List<EmissorDto>> ListarEmissores(bool inativos) => Obter<List<EmissorDto>>("api/emissores?inativos=" + B(inativos));
+    public Task<List<EmissorDto>> ListarEmissores(bool inativos, bool excluidos = false) =>
+        Obter<List<EmissorDto>>("api/emissores?inativos=" + B(inativos) + "&excluidos=" + B(excluidos));
+    public Task ExcluirEmissor(int id) => Raw(HttpMethod.Delete, "api/emissores/" + id);
     public Task<EmissorDto> CriarEmissor(EmissorDto d) => Enviar<EmissorDto>(HttpMethod.Post, "api/emissores", d);
     public Task<EmissorDto> EditarEmissor(int id, EmissorDto d) => Enviar<EmissorDto>(HttpMethod.Put, "api/emissores/" + id, d);
+
+    // ---- Licença ----
+    public Task<LicencaStatusDto> Licenca() => Obter<LicencaStatusDto>("api/licenca");
+    public Task<LicencaStatusDto> InstalarLicenca(string conteudo) =>
+        Enviar<LicencaStatusDto>(HttpMethod.Post, "api/licenca", new LicencaInstalarReq { Conteudo = conteudo });
 
     // ---- Contatos ----
     public Task<List<ContatoDto>> ListarContatos(string busca, bool inativos) =>

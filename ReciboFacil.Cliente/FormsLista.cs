@@ -164,9 +164,10 @@ public class ContatosForm : Form
 public class EmissoresForm : Form
 {
     readonly CheckBox chkInativos = new() { Text = "Mostrar inativos", AutoSize = true, Margin = new Padding(3, 7, 3, 3) };
-    readonly ListView lista = UiLista.Nova(("Nome / razão social", 280), ("CPF/CNPJ", 140), ("Cidade/UF", 150), ("Telefone", 130), ("Situação", 80));
+    readonly ListView lista = UiLista.Nova(("Nome / razão social", 280), ("CPF/CNPJ", 140), ("Cidade/UF", 150), ("Telefone", 130), ("Situação", 110));
     readonly Button btnEditar = UiLista.Botao("Editar");
     readonly Button btnAtivo = UiLista.Botao("Inativar", 100);
+    readonly Button btnExcluir = UiLista.Botao("Excluir", 90);
 
     public EmissoresForm()
     {
@@ -179,13 +180,14 @@ public class EmissoresForm : Form
         var btnNovo = UiLista.Botao("Novo emissor");
         var btnFechar = UiLista.Botao("Fechar", 90);
         btnFechar.DialogResult = DialogResult.Cancel;
-        rodape.Controls.AddRange(new Control[] { btnNovo, btnEditar, btnAtivo, btnFechar });
+        rodape.Controls.AddRange(new Control[] { btnNovo, btnEditar, btnAtivo, btnExcluir, btnFechar });
 
         Controls.Add(lista);
         Controls.Add(topo);
         Controls.Add(rodape);
         lista.BringToFront();
         CancelButton = btnFechar;
+        btnExcluir.Click += (s, e) => ExcluirSelecionado();
 
         chkInativos.CheckedChanged += (s, e) => Carregar();
         lista.SelectedIndexChanged += (s, e) => AtualizarBotoes();
@@ -205,7 +207,24 @@ public class EmissoresForm : Form
         var admin = App.EhAdmin;
         btnEditar.Enabled = d != null && admin;
         btnAtivo.Enabled = d != null && admin;
+        btnExcluir.Enabled = d != null && admin;
         btnAtivo.Text = d != null && !d.Ativo ? "Reativar" : "Inativar";
+    }
+
+    async void ExcluirSelecionado()
+    {
+        var d = Selecionado();
+        if (d == null) return;
+        if (!Erros.Confirmar(this,
+            "Excluir o emissor \"" + d.Nome + "\"?\n\n" +
+            "Ele deixa de aparecer para novos recibos. Os recibos já emitidos continuam no histórico e podem ser reimpressos.\n" +
+            "Esta ação não pode ser desfeita.")) return;
+        try
+        {
+            await App.Api.ExcluirEmissor(d.Id);
+            Carregar();
+        }
+        catch (Exception ex) { Erros.Mostrar(this, ex); }
     }
 
     async void Carregar()
@@ -219,7 +238,7 @@ public class EmissoresForm : Form
             foreach (var d in itens)
             {
                 var cidade = string.Join("/", new[] { d.Cidade, d.Uf }.Where(x => x.Length > 0));
-                var item = new ListViewItem(new[] { d.Nome, d.Documento, cidade, d.Telefone, d.Ativo ? "Ativo" : "Inativo" }) { Tag = d };
+                var item = new ListViewItem(new[] { d.Nome, d.Documento, cidade, d.Telefone, d.Ativo ? (d.Liberado ? "Ativo" : "Requer licença") : "Inativo" }) { Tag = d };
                 if (!d.Ativo) item.ForeColor = SystemColors.GrayText;
                 lista.Items.Add(item);
             }

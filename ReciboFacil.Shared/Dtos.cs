@@ -4,11 +4,11 @@ public static class Constantes
 {
     public const string Programa = "ReciboFacil";
     public const string Desenvolvedor = "Renato Terentim";
-    public const string VersaoApp = "2.0.5";
+    public const string VersaoApp = "2.1.1";
     // Sobe quando a comunicação cliente/servidor muda de forma incompatível.
     public const int Versao = 4;
     // Quantidade de migrações do banco (Db.Migracoes). A ferramenta de restauração usa para recusar backups de versão mais nova.
-    public const int VersaoEsquema = 4;
+    public const int VersaoEsquema = 6;
     public const string Administrador = "Administrador";
     public const string Operador = "Operador";
 }
@@ -86,6 +86,10 @@ public class EmissorDto
     public string Email { get; set; } = "";
     public string Observacoes { get; set; } = "";
     public bool Ativo { get; set; } = true;
+    // Só preenchido na lista de emissores: false = este emissor precisa de licença para emitir recibos.
+    public bool Liberado { get; set; } = true;
+    // Emissor excluído: some das telas, mas continua no banco para o histórico de recibos.
+    public bool Excluido { get; set; }
 }
 
 public class ContatoDto

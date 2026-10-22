@@ -6,6 +6,8 @@ namespace ReciboFacil.Cliente;
 public class MainForm : Form
 {
     public bool TrocarUsuario { get; private set; }
+    readonly ToolStripStatusLabel lblLicenca = new("") { BorderSides = ToolStripStatusLabelBorderSides.Left };
+    bool _avisouLicenca;
     readonly ToolStripStatusLabel lblBackup = new("") { BorderSides = ToolStripStatusLabelBorderSides.Left };
 
     public MainForm()
@@ -36,6 +38,7 @@ public class MainForm : Form
             mAdm.DropDownItems.Add("&Usuários", null, (s, e) => Abrir(new UsuariosForm()));
             mAdm.DropDownItems.Add("&Numeração dos recibos", null, (s, e) => Abrir(new NumeracaoForm()));
             mAdm.DropDownItems.Add(new ToolStripSeparator());
+            mAdm.DropDownItems.Add("&Licença...", null, (s, e) => { Abrir(new LicencaForm()); _ = AtualizarLicenca(false); });
             mAdm.DropDownItems.Add("&Backup...", null, (s, e) => { Abrir(new BackupForm()); _ = AtualizarBackup(); });
             mAdm.DropDownItems.Add("&Restaurar um backup...", null, (s, e) => AbrirRestauracao());
             menu.Items.Add(mAdm);
@@ -58,6 +61,7 @@ public class MainForm : Form
         var status = new StatusStrip();
         status.Items.Add(new ToolStripStatusLabel("Usuário: " + App.Usuario.Nome + " (" + App.Usuario.Perfil + ")"));
         if (App.EhAdmin) status.Items.Add(lblBackup);
+        status.Items.Add(lblLicenca);
         status.Items.Add(new ToolStripStatusLabel("Servidor: " + App.Config.Servidor) { Spring = true, TextAlign = ContentAlignment.MiddleRight });
 
         // Tela inicial com os dois atalhos principais, centralizados.
@@ -93,6 +97,7 @@ public class MainForm : Form
         centro.BringToFront();
 
         if (App.EhAdmin) Shown += async (s, e) => await AtualizarBackup();
+        Shown += async (s, e) => await AtualizarLicenca(App.EhAdmin);
     }
 
     async Task AtualizarBackup()
@@ -104,6 +109,23 @@ public class MainForm : Form
             lblBackup.ForeColor = alerta ? Color.Firebrick : SystemColors.ControlText;
         }
         catch { lblBackup.Text = ""; }
+    }
+
+    async Task AtualizarLicenca(bool avisar)
+    {
+        try
+        {
+            var st = await App.Api.Licenca();
+            lblLicenca.Text = st.Resumo;
+            lblLicenca.ForeColor = st.Alerta ? Color.Firebrick : SystemColors.ControlText;
+            // Administrador é avisado ao abrir o programa quando a licença está perto de vencer ou já venceu.
+            if (avisar && st.Alerta && !_avisouLicenca)
+            {
+                _avisouLicenca = true;
+                Erros.Aviso(this, st.Titulo + "\n\n" + st.Detalhe + "\n\nMenu Administração → Licença.");
+            }
+        }
+        catch { lblLicenca.Text = ""; }
     }
 
     void AbrirRestauracao()
