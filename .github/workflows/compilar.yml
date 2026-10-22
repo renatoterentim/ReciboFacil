@@ -11,14 +11,32 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - name: Compilar
+      - name: Instalar Inno Setup
+        shell: cmd
+        run: choco install innosetup -y --no-progress
+        continue-on-error: true
+      - name: Compilar (programa e instaladores)
         shell: cmd
         run: call build.bat
-      - uses: actions/upload-artifact@v4
+      - name: Instalador 64 bits
+        uses: actions/upload-artifact@v4
+        with:
+          name: Instalador-x64
+          path: instalador-saida/*-x64.exe
+          if-no-files-found: warn
+      - name: Instalador 32 bits
+        uses: actions/upload-artifact@v4
+        with:
+          name: Instalador-x86
+          path: instalador-saida/*-x86.exe
+          if-no-files-found: warn
+      - name: Pastas (sem instalador)
+        uses: actions/upload-artifact@v4
         with:
           name: ReciboFacil-win-x64
           path: publicar/win-x64
-      - uses: actions/upload-artifact@v4
+      - name: Pastas 32 bits (sem instalador)
+        uses: actions/upload-artifact@v4
         with:
           name: ReciboFacil-win-x86
           path: publicar/win-x86
