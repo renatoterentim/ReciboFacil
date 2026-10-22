@@ -5,7 +5,7 @@ namespace ReciboFacil.Cliente;
 static class Program
 {
     [STAThread]
-    static void Main()
+    static void Main(string[] args)
     {
         Application.SetHighDpiMode(HighDpiMode.SystemAware);
         Application.EnableVisualStyles();
@@ -14,6 +14,13 @@ static class Program
             MessageBox.Show("Ocorreu um erro inesperado:\n\n" + e.Exception.Message, App.Titulo, MessageBoxButtons.OK, MessageBoxIcon.Error);
 
         App.Config = ConfigCliente.Carregar();
+
+        // Ferramenta de restauração de backup (não precisa de login; exige administrador do Windows).
+        if (args.Any(a => string.Equals(a, "--restaurar", StringComparison.OrdinalIgnoreCase)))
+        {
+            RestaurarForm.Abrir();
+            return;
+        }
 
         while (true)
         {

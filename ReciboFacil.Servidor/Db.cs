@@ -1,3 +1,4 @@
+using ReciboFacil.Shared;
 using System.Globalization;
 using System.Text;
 using Microsoft.Data.Sqlite;
@@ -162,6 +163,8 @@ END;
 
     public static void Migrar()
     {
+        if (Migracoes.Length != Constantes.VersaoEsquema)
+            throw new InvalidOperationException("Constantes.VersaoEsquema precisa ser igual ao número de migrações.");
         Directory.CreateDirectory(DataDir);
         Directory.CreateDirectory(Path.Combine(DataDir, "Backups"));
         bool existia = File.Exists(DbPath);

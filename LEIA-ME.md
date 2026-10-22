@@ -1,4 +1,22 @@
-# ReciboFácil — Etapa 2 (recibos) — versão 1.3.0
+# ReciboFácil — versão 2.0.0 (Etapa 3: backup, restauração e instalador)
+
+## Novidades da 2.0.0
+
+- **Instalador** (`ReciboFacil-Setup-2.0.0-x64.exe` para Windows 64 bits, `...-x86.exe` para 32 bits). Baixe pela aba *Actions* do GitHub,
+  em "Artifacts" (Instalador-x64 / Instalador-x86). Se o instalador não aparecer, use os artifacts `ReciboFacil-win-x64/x86` (pastas) como antes.
+  - No computador servidor escolha "Computador SERVIDOR"; nos demais, "Computador comum".
+  - Pasta padrão `C:\ReciboFacil`. O serviço do servidor e a liberação da porta 5180 no firewall são configurados sozinhos.
+  - **Atualização**: rode o instalador novo. Ele detecta a instalação existente e pergunta se você quer atualizar. Antes, o serviço é parado
+    e o banco é copiado para `Dados\Backups\pre-atualizacao-...db`. Os dados nunca são apagados (nem ao desinstalar).
+- **Backup** (menu Administração → Backup, só administrador): mostra a data do último backup, faz backup agora, salva uma cópia no computador
+  em uso, e configura o backup **automático** diário (horário, quantos manter e pasta de cópia extra em outro disco/computador — o caminho é visto
+  pelo SERVIDOR, ex.: `D:\Backup` ou `\\COMPUTADOR2\Backup`). A barra inferior mostra a data do último backup (vermelho se faz mais de 2 dias ou falhou).
+  Só os backups automáticos antigos são apagados; manuais e de segurança são mantidos.
+- **Restaurar** (Administração → Restaurar um backup, ou atalho "Restaurar backup" no menu Iniciar do servidor): ferramenta própria, pede permissão de administrador,
+  para o serviço, guarda cópia do banco atual (`pre-restauracao-...db`), troca o banco e religa o serviço. Aceita um arquivo `.db` ou uma pasta
+  (cópia da pasta `Dados`). Há a opção de manter a numeração atual, para não repetir números de recibos.
+- **Copiar a pasta inteira**: pare o serviço "ReciboFacil Servidor", copie `C:\ReciboFacil\Dados` e religue. Para voltar, use a ferramenta de restauração apontando para a pasta copiada.
+- **Ajuda → Sobre** mostra o desenvolvedor.
 
 ## Novidades da 1.4.0
 

@@ -3,9 +3,12 @@ namespace ReciboFacil.Shared;
 public static class Constantes
 {
     public const string Programa = "ReciboFacil";
-    public const string VersaoApp = "1.4.0";
+    public const string Desenvolvedor = "Renato Terentim";
+    public const string VersaoApp = "2.0.0";
     // Sobe quando a comunicação cliente/servidor muda de forma incompatível.
     public const int Versao = 4;
+    // Quantidade de migrações do banco (Db.Migracoes). A ferramenta de restauração usa para recusar backups de versão mais nova.
+    public const int VersaoEsquema = 4;
     public const string Administrador = "Administrador";
     public const string Operador = "Operador";
 }
@@ -185,4 +188,37 @@ public class NumeroReq
 public class ProximoNumeroDto
 {
     public int Proximo { get; set; }
+}
+
+public class BackupConfigDto
+{
+    public bool Automatico { get; set; } = true;
+    public string Hora { get; set; } = "23:00";
+    public int Manter { get; set; } = 30;
+    // Pasta no computador SERVIDOR (outro disco ou pasta de rede) que recebe uma cópia de cada backup.
+    public string PastaExtra { get; set; } = "";
+}
+
+public class BackupArquivoDto
+{
+    public string Nome { get; set; } = "";
+    // auto, manual, pre-migracao, pre-restauracao, pre-atualizacao, outro
+    public string Tipo { get; set; } = "";
+    public string Quando { get; set; } = "";   // ISO (UTC)
+    public long Bytes { get; set; }
+}
+
+public class BackupStatusDto
+{
+    public BackupConfigDto Config { get; set; } = new();
+    public string UltimoOkEm { get; set; } = "";
+    public string UltimoOkTipo { get; set; } = "";
+    public string UltimoOkArquivo { get; set; } = "";
+    public long UltimoOkBytes { get; set; }
+    public string UltimaFalhaEm { get; set; } = "";
+    public string UltimaFalhaMensagem { get; set; } = "";
+    public string ExtraUltimoOkEm { get; set; } = "";
+    public string ExtraErro { get; set; } = "";
+    public string ProximoAutomatico { get; set; } = "";   // texto já formatado no servidor
+    public List<BackupArquivoDto> Arquivos { get; set; } = new();
 }

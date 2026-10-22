@@ -9,8 +9,11 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 
 builder.Host.UseWindowsService(o => o.ServiceName = "ReciboFacilServidor");
 
+// Sem DataDir configurado, os dados ficam em ..\Dados (ao lado da pasta Servidor), ex.: C:\ReciboFacil\Dados.
 var dataDir = builder.Configuration["DataDir"];
-if (!string.IsNullOrWhiteSpace(dataDir)) Db.DataDir = dataDir;
+Db.DataDir = !string.IsNullOrWhiteSpace(dataDir)
+    ? dataDir
+    : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "Dados"));
 if (string.IsNullOrWhiteSpace(builder.Configuration["Urls"]))
     builder.WebHost.UseUrls("http://0.0.0.0:5180");
 
@@ -24,6 +27,8 @@ catch (Exception ex)
     try { File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "erro-inicializacao.txt"), DateTime.Now + Environment.NewLine + ex); } catch { }
     throw;
 }
+
+builder.Services.AddHostedService<BackupAgendador>();
 
 var app = builder.Build();
 
@@ -51,5 +56,6 @@ app.Use(async (ctx, next) =>
 EndpointsUsuarios.Mapear(app);
 EndpointsCadastros.Mapear(app);
 EndpointsRecibos.Mapear(app);
+EndpointsBackup.Mapear(app);
 
 app.Run();

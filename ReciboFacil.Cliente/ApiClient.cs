@@ -26,10 +26,10 @@ public class ApiClient
     {
         endereco = endereco.Trim();
         if (!endereco.StartsWith("http", StringComparison.OrdinalIgnoreCase)) endereco = "http://" + endereco;
-        _http = new HttpClient { BaseAddress = new Uri(endereco.TrimEnd('/') + "/"), Timeout = TimeSpan.FromSeconds(20) };
+        _http = new HttpClient { BaseAddress = new Uri(endereco.TrimEnd('/') + "/"), Timeout = Timeout.InfiniteTimeSpan };
     }
 
-    async Task<string> Raw(HttpMethod metodo, string caminho, object? corpo = null)
+    async Task<string> Raw(HttpMethod metodo, string caminho, object? corpo = null, int segundos = 20)
     {
         using var req = new HttpRequestMessage(metodo, caminho.TrimStart('/'));
         if (Token != null) req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Token);
@@ -38,7 +38,8 @@ public class ApiClient
         HttpResponseMessage resp;
         try
         {
-            resp = await _http.SendAsync(req).ConfigureAwait(false);
+            using var limite = new CancellationTokenSource(TimeSpan.FromSeconds(segundos));
+            resp = await _http.SendAsync(req, limite.Token).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is HttpRequestException || ex is TaskCanceledException)
         {
@@ -60,8 +61,8 @@ public class ApiClient
     async Task<T> Obter<T>(string caminho) =>
         JsonSerializer.Deserialize<T>(await Raw(HttpMethod.Get, caminho).ConfigureAwait(false), J)!;
 
-    async Task<T> Enviar<T>(HttpMethod metodo, string caminho, object? corpo) =>
-        JsonSerializer.Deserialize<T>(await Raw(metodo, caminho, corpo).ConfigureAwait(false), J)!;
+    async Task<T> Enviar<T>(HttpMethod metodo, string caminho, object? corpo, int segundos = 20) =>
+        JsonSerializer.Deserialize<T>(await Raw(metodo, caminho, corpo, segundos).ConfigureAwait(false), J)!;
 
     static string B(bool v) => v ? "true" : "false";
 
@@ -118,6 +119,35 @@ public class ApiClient
     public Task<ReciboDto> CancelarRecibo(int numero, string motivo) =>
         Enviar<ReciboDto>(HttpMethod.Post, "api/recibos/" + numero + "/cancelar", new CancelarReq { Motivo = motivo });
     public Task RegistrarVia(int numero) => Raw(HttpMethod.Post, "api/recibos/" + numero + "/via");
+    // ---- Backup (administrador) ----
+    public Task<BackupStatusDto> BackupStatus() => Obter<BackupStatusDto>("api/backup");
+    public Task<BackupStatusDto> BackupAgora() => Enviar<BackupStatusDto>(HttpMethod.Post, "api/backup/agora", null, 300);
+    public Task<BackupStatusDto> BackupSalvarConfig(BackupConfigDto c) => Enviar<BackupStatusDto>(HttpMethod.Put, "api/backup/config", c, 60);
+
+    public async Task BaixarBackup(string nome, string destino)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Get, "api/backup/arquivo/" + Uri.EscapeDataString(nome));
+        if (Token != null) req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+        HttpResponseMessage resp;
+        try
+        {
+            using var limite = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+            resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, limite.Token).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is HttpRequestException || ex is TaskCanceledException)
+        {
+            throw new ApiException(0, "CONEXAO", "Não foi possível conectar ao servidor. Verifique se ele está ligado e se o endereço está correto.");
+        }
+        using (resp)
+        {
+            if (!resp.IsSuccessStatusCode)
+                throw new ApiException((int)resp.StatusCode, "", "Não foi possível baixar o backup (erro " + (int)resp.StatusCode + ").");
+            await using var origem = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
+            await using var saida = File.Create(destino);
+            await origem.CopyToAsync(saida).ConfigureAwait(false);
+        }
+    }
+
     public Task<ProximoNumeroDto> ProximoNumero() => Obter<ProximoNumeroDto>("api/recibos/proximo-numero");
     public Task<ProximoNumeroDto> DefinirProximoNumero(int numero) =>
         Enviar<ProximoNumeroDto>(HttpMethod.Post, "api/recibos/proximo-numero", new NumeroReq { Numero = numero });

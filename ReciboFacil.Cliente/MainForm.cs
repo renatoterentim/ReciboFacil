@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using ReciboFacil.Shared;
 
 namespace ReciboFacil.Cliente;
@@ -5,6 +6,7 @@ namespace ReciboFacil.Cliente;
 public class MainForm : Form
 {
     public bool TrocarUsuario { get; private set; }
+    readonly ToolStripStatusLabel lblBackup = new("") { BorderSides = ToolStripStatusLabelBorderSides.Left };
 
     public MainForm()
     {
@@ -33,6 +35,9 @@ public class MainForm : Form
             var mAdm = new ToolStripMenuItem("&Administração");
             mAdm.DropDownItems.Add("&Usuários", null, (s, e) => Abrir(new UsuariosForm()));
             mAdm.DropDownItems.Add("&Numeração dos recibos", null, (s, e) => Abrir(new NumeracaoForm()));
+            mAdm.DropDownItems.Add(new ToolStripSeparator());
+            mAdm.DropDownItems.Add("&Backup...", null, (s, e) => { Abrir(new BackupForm()); _ = AtualizarBackup(); });
+            mAdm.DropDownItems.Add("&Restaurar um backup...", null, (s, e) => AbrirRestauracao());
             menu.Items.Add(mAdm);
         }
 
@@ -45,11 +50,14 @@ public class MainForm : Form
 
         var mAjuda = new ToolStripMenuItem("A&juda");
         mAjuda.DropDownItems.Add("&Sobre", null, (s, e) =>
-            Erros.Aviso(this, "ReciboFácil " + Constantes.VersaoApp + "\nServidor: " + App.Config.Servidor));
+            Erros.Aviso(this, "ReciboFácil " + Constantes.VersaoApp +
+                "\n\nDesenvolvedor: " + Constantes.Desenvolvedor +
+                "\n\nServidor: " + App.Config.Servidor));
         menu.Items.Add(mAjuda);
 
         var status = new StatusStrip();
         status.Items.Add(new ToolStripStatusLabel("Usuário: " + App.Usuario.Nome + " (" + App.Usuario.Perfil + ")"));
+        if (App.EhAdmin) status.Items.Add(lblBackup);
         status.Items.Add(new ToolStripStatusLabel("Servidor: " + App.Config.Servidor) { Spring = true, TextAlign = ContentAlignment.MiddleRight });
 
         // Tela inicial com os dois atalhos principais, centralizados.
@@ -83,6 +91,31 @@ public class MainForm : Form
         Controls.Add(menu);
         MainMenuStrip = menu;
         centro.BringToFront();
+
+        if (App.EhAdmin) Shown += async (s, e) => await AtualizarBackup();
+    }
+
+    async Task AtualizarBackup()
+    {
+        try
+        {
+            var (texto, alerta) = FormatoBackup.Resumo(await App.Api.BackupStatus());
+            lblBackup.Text = texto;
+            lblBackup.ForeColor = alerta ? Color.Firebrick : SystemColors.ControlText;
+        }
+        catch { lblBackup.Text = ""; }
+    }
+
+    void AbrirRestauracao()
+    {
+        if (!Erros.Confirmar(this,
+            "A restauração deve ser feita no computador SERVIDOR (onde está a pasta C:\\ReciboFacil\\Dados), " +
+            "com os demais computadores fora do programa.\n\nAbrir a ferramenta de restauração neste computador?")) return;
+        try
+        {
+            Process.Start(new ProcessStartInfo(Environment.ProcessPath ?? Application.ExecutablePath, "--restaurar") { UseShellExecute = true });
+        }
+        catch (Exception ex) { Erros.Mostrar(this, ex); }
     }
 
     void NovoRecibo() => Abrir(new ReciboForm());
