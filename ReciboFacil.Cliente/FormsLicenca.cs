@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using ReciboFacil.Shared;
 
 namespace ReciboFacil.Cliente;
@@ -15,7 +16,7 @@ public class LicencaForm : Form
 
     public LicencaForm()
     {
-        UiLista.Preparar(this, "Licença", 632, 372);
+        UiLista.Preparar(this, "Licença", 632, 436);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
@@ -36,8 +37,23 @@ public class LicencaForm : Form
             Text = "Para comprar ou renovar a licença, envie o código da instalação ao desenvolvedor. " +
                    "Ele enviará um arquivo de licença (.rflic), que você carrega aqui. A licença vale para todos os computadores que usam este servidor."
         });
-        btnCarregar.Left = 16; btnCarregar.Top = 292;
-        btnFechar.Left = 526; btnFechar.Top = 330;
+
+        Controls.Add(new Label
+        {
+            Text = "Para comprar ou renovar, fale com " + Constantes.Desenvolvedor + ":",
+            Left = 16, Top = 286, Width = 600, Height = 20, Font = new Font("Segoe UI", 9F, FontStyle.Bold)
+        });
+        var lnkWhats = new LinkLabel { Text = "WhatsApp " + Constantes.ContatoTelefone, Left = 16, Top = 310, Width = 280, Height = 20 };
+        var lnkEmail = new LinkLabel { Text = Constantes.ContatoEmail, Left = 310, Top = 310, Width = 300, Height = 20 };
+        lnkWhats.LinkClicked += (s, e) => Abrir("https://wa.me/" + Constantes.ContatoWhatsApp + "?text=" +
+            Uri.EscapeDataString("Olá! Quero a licença do ReciboFácil. Código da instalação: " + txtId.Text));
+        lnkEmail.LinkClicked += (s, e) => Abrir("mailto:" + Constantes.ContatoEmail + "?subject=" +
+            Uri.EscapeDataString("Licença do ReciboFácil") + "&body=" +
+            Uri.EscapeDataString("Olá! Quero a licença do ReciboFácil.\r\nCódigo da instalação: " + txtId.Text));
+        Controls.AddRange(new Control[] { lnkWhats, lnkEmail });
+
+        btnCarregar.Left = 16; btnCarregar.Top = 350;
+        btnFechar.Left = 526; btnFechar.Top = 396;
         Controls.AddRange(new Control[] { btnCarregar, btnFechar });
         CancelButton = btnFechar;
         btnFechar.Click += (s, e) => Close();
@@ -49,6 +65,12 @@ public class LicencaForm : Form
         };
         btnCarregar.Click += async (s, e) => await Carregar();
         Shown += async (s, e) => await Atualizar();
+    }
+
+    void Abrir(string endereco)
+    {
+        try { Process.Start(new ProcessStartInfo(endereco) { UseShellExecute = true }); }
+        catch (Exception ex) { Erros.Aviso(this, "Não foi possível abrir o link: " + ex.Message); }
     }
 
     async Task Atualizar()

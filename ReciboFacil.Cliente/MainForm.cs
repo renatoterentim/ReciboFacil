@@ -55,6 +55,8 @@ public class MainForm : Form
         mAjuda.DropDownItems.Add("&Sobre", null, (s, e) =>
             Erros.Aviso(this, "ReciboFácil " + Constantes.VersaoApp +
                 "\n\nDesenvolvedor: " + Constantes.Desenvolvedor +
+                "\nWhatsApp: " + Constantes.ContatoTelefone +
+                "\nE-mail: " + Constantes.ContatoEmail +
                 "\n\nServidor: " + App.Config.Servidor));
         menu.Items.Add(mAjuda);
 

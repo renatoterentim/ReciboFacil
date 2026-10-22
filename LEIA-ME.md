@@ -1,4 +1,9 @@
-# ReciboFácil — versão 2.1.1 (licenças)
+# ReciboFácil — versão 2.1.2 (licenças)
+
+## Novidades da 2.1.2
+
+- Tela **Licença** e **Ajuda → Sobre** mostram o contato do desenvolvedor (WhatsApp e e-mail). Os links abrem o WhatsApp e o e-mail já com o código da instalação preenchido.
+  Para mudar o contato, edite as constantes `Contato*` em `ReciboFacil.Shared/Dtos.cs`.
 
 ## Novidades da 2.1.1
 
