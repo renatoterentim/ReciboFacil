@@ -11,7 +11,7 @@ public static class EndpointsRecibos
 {
     const string ColsRecibo =
         "numero, sentido, emissor_id, contato_id, emissor_json, contato_json, valor_centavos, valor_extenso, referente, data_recibo, cidade, " +
-        "emitido_em, emitido_por_login, duplicado_de, cancelado, cancelado_em, cancelado_por_login, motivo_cancelamento";
+        "emitido_em, emitido_por_login, duplicado_de, cancelado, cancelado_em, cancelado_por_login, motivo_cancelamento, itens_json, mostrar_doc_pagador";
 
     static string L(string? s) => (s ?? "").Trim();
 
@@ -45,8 +45,26 @@ public static class EndpointsRecibos
         Cancelado = r.GetInt32(14) == 1,
         CanceladoEm = r.IsDBNull(15) ? "" : r.GetString(15),
         CanceladoPor = r.IsDBNull(16) ? "" : r.GetString(16),
-        Motivo = r.IsDBNull(17) ? "" : r.GetString(17)
+        Motivo = r.IsDBNull(17) ? "" : r.GetString(17),
+        Itens = LerItens(r.GetString(18)),
+        MostrarDocPagador = r.GetInt32(19) == 1
     };
+
+    static List<ReciboItemDto> LerItens(string json)
+    {
+        try { return JsonSerializer.Deserialize<List<ReciboItemDto>>(json) ?? new(); }
+        catch { return new(); }
+    }
+
+    // Texto usado na lista e na busca por descrição: título + descrição dos itens.
+    static string ResumoTexto(string referente, List<ReciboItemDto> itens)
+    {
+        if (itens.Count == 0) return referente;
+        var partes = new List<string>();
+        if (referente.Length > 0) partes.Add(referente);
+        partes.AddRange(itens.Select(i => i.Descricao));
+        return string.Join("; ", partes);
+    }
 
     static ReciboDto? PorNumero(SqliteConnection c, int numero)
     {
@@ -99,13 +117,39 @@ public static class EndpointsRecibos
             var sentido = L(req.Sentido).ToUpperInvariant();
             if (sentido != "PAGAMENTO" && sentido != "RECEBIMENTO")
                 return Erro(400, "DADOS_INVALIDOS", "Tipo de recibo inválido.");
-            if (req.ValorCentavos < 1 || req.ValorCentavos > 99_999_999_999L)
-                return Erro(400, "DADOS_INVALIDOS", "Informe um valor entre R$ 0,01 e R$ 999.999.999,99.");
             var referente = L(req.Referente);
-            if (referente.Length == 0)
-                return Erro(400, "DADOS_INVALIDOS", "Informe a que se refere o recibo.");
-            if (referente.Length > 1000)
-                return Erro(400, "DADOS_INVALIDOS", "O texto \"referente a\" é muito longo (máximo 1000 caracteres).");
+            var itens = new List<ReciboItemDto>();
+            long total = req.ValorCentavos;
+            if (req.Itens != null && req.Itens.Count > 0)
+            {
+                if (req.Itens.Count > LimitesRecibo.MaxItens)
+                    return Erro(400, "DADOS_INVALIDOS", "Um recibo aceita no máximo " + LimitesRecibo.MaxItens + " itens.");
+                if (referente.Length > 150)
+                    return Erro(400, "DADOS_INVALIDOS", "O título é muito longo (máximo 150 caracteres).");
+                total = 0;
+                int n = 0;
+                foreach (var it in req.Itens)
+                {
+                    n++;
+                    var desc = L(it.Descricao);
+                    if (desc.Length == 0) return Erro(400, "DADOS_INVALIDOS", "Informe a descrição do item " + n + ".");
+                    if (desc.Length > LimitesRecibo.MaxDescricaoItem)
+                        return Erro(400, "DADOS_INVALIDOS", "A descrição do item " + n + " é muito longa (máximo " + LimitesRecibo.MaxDescricaoItem + " caracteres).");
+                    if (it.ValorCentavos < 1 || it.ValorCentavos > 99_999_999_999L)
+                        return Erro(400, "DADOS_INVALIDOS", "Informe um valor válido para o item " + n + ".");
+                    total += it.ValorCentavos;
+                    itens.Add(new ReciboItemDto { Descricao = desc, ValorCentavos = it.ValorCentavos });
+                }
+            }
+            else
+            {
+                if (referente.Length == 0)
+                    return Erro(400, "DADOS_INVALIDOS", "Informe a que se refere o recibo.");
+                if (referente.Length > 1000)
+                    return Erro(400, "DADOS_INVALIDOS", "O texto \"referente a\" é muito longo (máximo 1000 caracteres).");
+            }
+            if (total < 1 || total > 99_999_999_999L)
+                return Erro(400, "DADOS_INVALIDOS", "Informe um valor entre R$ 0,01 e R$ 999.999.999,99.");
             if (!DataValida(req.Data))
                 return Erro(400, "DADOS_INVALIDOS", "Data inválida.");
             var cidade = L(req.Cidade);
@@ -118,23 +162,23 @@ public static class EndpointsRecibos
             if (contato == null) return Erro(404, "NAO_ENCONTRADO", "Contato não encontrado.");
             if (!contato.Ativo) return Erro(400, "DADOS_INVALIDOS", "O contato está inativo. Reative-o em Cadastros → Contatos.");
 
-            var extenso = Extenso.Moeda(req.ValorCentavos);
+            var extenso = Extenso.Moeda(total);
             int? dup = (req.DuplicadoDe.HasValue && req.DuplicadoDe.Value > 0) ? req.DuplicadoDe : null;
 
             int numero;
             using (var cmd = c.Cmd(
                 "INSERT INTO recibos(sentido, emissor_id, contato_id, emissor_nome, contato_nome, contato_documento, contato_documento_digitos, " +
-                "emissor_json, contato_json, valor_centavos, valor_extenso, referente, data_recibo, cidade, emitido_em, emitido_por_id, emitido_por_login, duplicado_de) " +
-                "VALUES($s,$ei,$ci,$en,$cn,$cd,$cdd,$ej,$cj,$v,$x,$ref,$dt,$cid,$em,$ui,$ul,$dup); SELECT last_insert_rowid();",
+                "emissor_json, contato_json, valor_centavos, valor_extenso, referente, data_recibo, cidade, emitido_em, emitido_por_id, emitido_por_login, duplicado_de, itens_json, mostrar_doc_pagador) " +
+                "VALUES($s,$ei,$ci,$en,$cn,$cd,$cdd,$ej,$cj,$v,$x,$ref,$dt,$cid,$em,$ui,$ul,$dup,$it,$mp); SELECT last_insert_rowid();",
                 ("$s", sentido), ("$ei", emissor.Id), ("$ci", contato.Id), ("$en", emissor.Nome), ("$cn", contato.Nome),
                 ("$cd", contato.Documento), ("$cdd", Doc.Digitos(contato.Documento)),
                 ("$ej", JsonSerializer.Serialize(emissor)), ("$cj", JsonSerializer.Serialize(contato)),
-                ("$v", req.ValorCentavos), ("$x", extenso), ("$ref", referente), ("$dt", req.Data), ("$cid", cidade),
-                ("$em", Agora()), ("$ui", sessao.Id), ("$ul", sessao.Login), ("$dup", dup)))
+                ("$v", total), ("$x", extenso), ("$ref", referente), ("$dt", req.Data), ("$cid", cidade),
+                ("$em", Agora()), ("$ui", sessao.Id), ("$ul", sessao.Login), ("$dup", dup), ("$it", JsonSerializer.Serialize(itens)), ("$mp", req.MostrarDocPagador ? 1 : 0)))
             {
                 numero = Convert.ToInt32(cmd.ExecuteScalar());
             }
-            Db.Auditar(c, sessao, "EMITIR", "recibo", numero, sentido + " " + req.ValorCentavos + " centavos");
+            Db.Auditar(c, sessao, "EMITIR", "recibo", numero, sentido + " " + total + " centavos" + (itens.Count > 0 ? " (" + itens.Count + " itens)" : ""));
             return Results.Json(PorNumero(c, numero));
         });
 
@@ -143,7 +187,7 @@ public static class EndpointsRecibos
             long? valorMin, long? valorMax, string? descricao, bool? cancelados) =>
         {
             var sql = new StringBuilder(
-                "SELECT numero, data_recibo, sentido, emissor_nome, contato_nome, contato_documento, valor_centavos, referente, cancelado, emitido_por_login " +
+                "SELECT numero, data_recibo, sentido, emissor_nome, contato_nome, contato_documento, valor_centavos, referente, cancelado, emitido_por_login, itens_json " +
                 "FROM recibos WHERE 1=1");
             var ps = new List<(string, object?)>();
             if (numero.HasValue) { sql.Append(" AND numero=$num"); ps.Add(("$num", (object?)numero.Value)); }
@@ -170,7 +214,7 @@ public static class EndpointsRecibos
                 {
                     Numero = r.GetInt32(0), Data = r.GetString(1), Sentido = r.GetString(2), EmissorNome = r.GetString(3),
                     ContatoNome = r.GetString(4), ContatoDocumento = r.GetString(5), ValorCentavos = r.GetInt64(6),
-                    Referente = r.GetString(7), Cancelado = r.GetInt32(8) == 1, EmitidoPor = r.GetString(9)
+                    Referente = ResumoTexto(r.GetString(7), LerItens(r.GetString(10))), Cancelado = r.GetInt32(8) == 1, EmitidoPor = r.GetString(9)
                 };
                 if (termosContato.Length > 0 && !TodosOsTermos(item.ContatoNome, termosContato)) continue;
                 if (termosDesc.Length > 0 && !TodosOsTermos(item.Referente, termosDesc)) continue;

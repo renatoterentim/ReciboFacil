@@ -134,7 +134,7 @@ public class FiltroRecibos
     public string Descricao { get; set; } = "";
     public long? ValorMin { get; set; }
     public long? ValorMax { get; set; }
-    public bool IncluirCancelados { get; set; }
+    public bool IncluirCancelados { get; set; } = true;
 
     public string ToQuery()
     {

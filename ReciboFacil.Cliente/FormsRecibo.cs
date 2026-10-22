@@ -38,13 +38,30 @@ public class Opcao<T>
 
 public class ReciboForm : Dialogo
 {
+    static readonly CultureInfo Br = CultureInfo.GetCultureInfo("pt-BR");
+    const int AltSimples = 170, AltItens = 304;
+
     readonly ComboBox cmbEmissor, cmbSentido;
-    readonly TextBox txtContato, txtValor, txtReferente, txtCidade;
+    readonly TextBox txtContato, txtCidade;
+    readonly CheckBox chkItens, chkDocPagador;
+    readonly Panel pnlModo, pnlSimples, pnlItens;
+    // modo simples (um valor e um texto)
+    readonly TextBox txtValor, txtReferente;
     readonly Label lblExtenso;
+    // modo itens (vários serviços, cada um com valor; o total é a soma)
+    readonly TextBox txtTitulo;
+    readonly DataGridView grid;
+    readonly Label lblTotal, lblExtensoItens;
     readonly DateTimePicker dtData;
     readonly ReciboDto? _modelo;
     ContatoDto? _contato;
     string _cidadeAuto = "";
+
+    static Label Rot(string texto, int y) =>
+        new Label { Text = texto, Left = 0, Top = y + 3, Width = 150, Height = 20, AutoSize = false };
+
+    static string CidadeDoEmissor(EmissorDto e) =>
+        string.Join(" - ", new[] { (e.Cidade ?? "").Trim(), (e.Uf ?? "").Trim().ToUpperInvariant() }.Where(x => x.Length > 0));
 
     // "modelo" preenche o formulário a partir de um recibo anterior (duplicar); o novo recibo recebe número novo.
     public ReciboForm(ReciboDto? modelo = null) : base(modelo == null ? "Novo recibo" : "Duplicar recibo nº " + modelo.Numero)
@@ -60,27 +77,82 @@ public class ReciboForm : Dialogo
         var btnContato = new Button { Text = "Selecionar...", Left = CX + CW - 104, Top = txtContato.Top - 2, Width = 104, Height = 26 };
         Controls.Add(btnContato);
 
-        txtValor = Texto("Valor (R$)", 20);
-        lblExtenso = Nota("", 36);
-        txtReferente = Multi("Referente a", 70);
+        chkItens = Check("Detalhar em vários itens (soma automática)");
+        chkDocPagador = Check("Mostrar CPF/CNPJ do pagador no recibo");
+
+        pnlModo = Adicionar(new Panel(), AltSimples);
+        pnlSimples = new Panel { Dock = DockStyle.Fill };
+        pnlItens = new Panel { Dock = DockStyle.Fill, Visible = false };
+        pnlModo.Controls.Add(pnlSimples);
+        pnlModo.Controls.Add(pnlItens);
+
+        // --- modo simples ---
+        pnlSimples.Controls.Add(Rot("Valor (R$)", 0));
+        txtValor = new TextBox { Left = 156, Top = 0, Width = 360, MaxLength = 20 };
+        pnlSimples.Controls.Add(txtValor);
+        lblExtenso = new Label { Left = 0, Top = 32, Width = 516, Height = 34, AutoSize = false };
+        pnlSimples.Controls.Add(lblExtenso);
+        pnlSimples.Controls.Add(Rot("Referente a", 72));
+        txtReferente = new TextBox { Left = 156, Top = 72, Width = 360, Height = 90, Multiline = true, AcceptsReturn = true, ScrollBars = ScrollBars.Vertical, MaxLength = 1000 };
+        pnlSimples.Controls.Add(txtReferente);
+
+        // --- modo itens ---
+        pnlItens.Controls.Add(Rot("Título (opcional)", 0));
+        txtTitulo = new TextBox { Left = 156, Top = 0, Width = 360, MaxLength = 150 };
+        pnlItens.Controls.Add(txtTitulo);
+
+        grid = new DataGridView
+        {
+            Left = 0, Top = 34, Width = 516, Height = 200,
+            AllowUserToAddRows = true, AllowUserToDeleteRows = true,
+            AllowUserToResizeRows = false, AllowUserToResizeColumns = false, AllowUserToOrderColumns = false,
+            RowHeadersVisible = false, MultiSelect = false,
+            BackgroundColor = SystemColors.Window, BorderStyle = BorderStyle.FixedSingle,
+            ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
+            ColumnHeadersHeight = 24,
+            SelectionMode = DataGridViewSelectionMode.CellSelect
+        };
+        grid.RowTemplate.Height = 22;
+        var colDesc = new DataGridViewTextBoxColumn
+        {
+            HeaderText = "Descrição do serviço",
+            AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
+            MaxInputLength = LimitesRecibo.MaxDescricaoItem,
+            SortMode = DataGridViewColumnSortMode.NotSortable
+        };
+        var colValor = new DataGridViewTextBoxColumn
+        {
+            HeaderText = "Valor (R$)",
+            Width = 120,
+            MaxInputLength = 15,
+            SortMode = DataGridViewColumnSortMode.NotSortable
+        };
+        colValor.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+        grid.Columns.AddRange(colDesc, colValor);
+        pnlItens.Controls.Add(grid);
+
+        lblTotal = new Label { Left = 0, Top = 240, Width = 390, Height = 22, AutoSize = false, Font = new Font(Font, FontStyle.Bold) };
+        pnlItens.Controls.Add(lblTotal);
+        var btnRemover = new Button { Text = "Remover linha", Left = 400, Top = 236, Width = 116, Height = 26 };
+        pnlItens.Controls.Add(btnRemover);
+        lblExtensoItens = new Label { Left = 0, Top = 266, Width = 516, Height = 34, AutoSize = false };
+        pnlItens.Controls.Add(lblExtensoItens);
+
+        // --- campos comuns ---
         dtData = Data("Data do recibo");
-        txtCidade = Texto("Cidade", 80);
+        txtCidade = Texto("Cidade / UF", 80);
         Fim("Visualizar e emitir");
         BtnOk.Width = 150;
         BtnOk.Left = CX + CW - 254;
 
-        if (modelo != null)
-        {
-            cmbSentido.SelectedIndex = modelo.Sentido == "RECEBIMENTO" ? 1 : 0;
-            _contato = modelo.Contato;
-            txtContato.Text = modelo.Contato.Nome;
-            txtValor.Text = (modelo.ValorCentavos / 100m).ToString("N2", CultureInfo.GetCultureInfo("pt-BR"));
-            txtReferente.Text = modelo.Referente;
-            txtCidade.Text = modelo.Cidade;
-        }
-
+        // --- eventos ---
         btnContato.Click += (s, e) => EscolherContato();
+        chkItens.CheckedChanged += (s, e) => AlternarModo();
         txtValor.TextChanged += (s, e) => AtualizarExtenso();
+        btnRemover.Click += (s, e) => RemoverLinha();
+        grid.CellEndEdit += (s, e) => AoEditarCelula(e.RowIndex, e.ColumnIndex);
+        grid.CellValueChanged += (s, e) => RecalcularItens();
+        grid.RowsRemoved += (s, e) => { RecalcularItens(); AgendarLimite(); };
         cmbEmissor.SelectedIndexChanged += (s, e) =>
         {
             if (cmbEmissor.SelectedItem is Opcao<EmissorDto> o)
@@ -88,11 +160,34 @@ public class ReciboForm : Dialogo
                 var atual = txtCidade.Text.Trim();
                 if (atual.Length == 0 || atual == _cidadeAuto)
                 {
-                    _cidadeAuto = o.Valor.Cidade;
+                    _cidadeAuto = CidadeDoEmissor(o.Valor);
                     txtCidade.Text = _cidadeAuto;
                 }
             }
         };
+
+        // --- preenchimento a partir de um recibo anterior ---
+        if (modelo != null)
+        {
+            cmbSentido.SelectedIndex = modelo.Sentido == "RECEBIMENTO" ? 1 : 0;
+            _contato = modelo.Contato;
+            txtContato.Text = modelo.Contato.Nome;
+            txtCidade.Text = ReciboDesenho.CidadeCompleta(modelo);
+            chkDocPagador.Checked = modelo.MostrarDocPagador;
+            if (modelo.Itens.Count > 0)
+            {
+                txtTitulo.Text = modelo.Referente;
+                foreach (var it in modelo.Itens)
+                    grid.Rows.Add(it.Descricao, (it.ValorCentavos / 100m).ToString("N2", Br));
+                chkItens.Checked = true;
+                LimitarLinhas();
+            }
+            else
+            {
+                txtValor.Text = (modelo.ValorCentavos / 100m).ToString("N2", Br);
+                txtReferente.Text = modelo.Referente;
+            }
+        }
 
         Shown += async (s, e) =>
         {
@@ -114,6 +209,7 @@ public class ReciboForm : Dialogo
                     return;
                 }
                 if (_contato == null) btnContato.Focus();
+                else if (chkItens.Checked) grid.Focus();
                 else txtValor.Focus();
             }
             catch (Exception ex) { Erros.Mostrar(this, ex); }
@@ -121,6 +217,27 @@ public class ReciboForm : Dialogo
 
         BtnOk.Click += (s, e) => Visualizar();
         AtualizarExtenso();
+        RecalcularItens();
+    }
+
+    void AlternarModo()
+    {
+        bool itens = chkItens.Checked;
+        pnlSimples.Visible = !itens;
+        pnlItens.Visible = itens;
+        int novo = itens ? AltItens : AltSimples;
+        int delta = novo - pnlModo.Height;
+        if (delta == 0) return;
+        int topo = pnlModo.Top;
+        foreach (Control c in Controls)
+            if (c != pnlModo && c.Top > topo) c.Top += delta;
+        pnlModo.Height = novo;
+        ClientSize = new Size(ClientSize.Width, ClientSize.Height + delta);
+        if (Visible)
+        {
+            var area = Screen.FromControl(this).WorkingArea;
+            Top = Math.Max(area.Top, Math.Min(Top, area.Bottom - Height));
+        }
     }
 
     void EscolherContato()
@@ -140,18 +257,112 @@ public class ReciboForm : Dialogo
             : "";
     }
 
+    // ---------- grade de itens ----------
+    void AoEditarCelula(int linha, int coluna)
+    {
+        if (linha < 0 || linha >= grid.Rows.Count) return;
+        if (coluna == 1)
+        {
+            var cel = grid.Rows[linha].Cells[1];
+            var txt = (cel.Value as string ?? "").Trim();
+            if (txt.Length == 0) cel.ErrorText = "";
+            else if (Dinheiro.TentarLer(txt, out var c))
+            {
+                cel.Value = (c / 100m).ToString("N2", Br);
+                cel.ErrorText = "";
+            }
+            else cel.ErrorText = "Valor inválido";
+        }
+        RecalcularItens();
+        AgendarLimite();
+    }
+
+    void RecalcularItens()
+    {
+        long total = 0;
+        foreach (DataGridViewRow row in grid.Rows)
+        {
+            if (row.IsNewRow) continue;
+            if (Dinheiro.TentarLer(row.Cells[1].Value as string, out var c)) total += c;
+        }
+        lblTotal.Text = "Total: " + Dinheiro.Formatar(total);
+        lblExtensoItens.Text = total > 0 && total <= 99_999_999_999L
+            ? "Por extenso: " + Dinheiro.Maiuscula(Extenso.Moeda(total))
+            : "";
+    }
+
+    // Quando chega ao máximo de itens, esconde a linha vazia de "novo item".
+    void LimitarLinhas()
+    {
+        int linhas = 0;
+        foreach (DataGridViewRow row in grid.Rows) if (!row.IsNewRow) linhas++;
+        grid.AllowUserToAddRows = linhas < LimitesRecibo.MaxItens;
+    }
+
+    void AgendarLimite()
+    {
+        if (IsHandleCreated && !IsDisposed) BeginInvoke(new Action(LimitarLinhas));
+    }
+
+    void RemoverLinha()
+    {
+        try
+        {
+            var linha = grid.CurrentRow;
+            if (linha == null || linha.IsNewRow) return;
+            grid.CancelEdit();
+            grid.Rows.Remove(linha);
+        }
+        catch { }
+    }
+
+    string? ColetarItens(List<ReciboItemDto> destino)
+    {
+        grid.EndEdit();
+        int n = 0;
+        foreach (DataGridViewRow row in grid.Rows)
+        {
+            if (row.IsNewRow) continue;
+            var desc = (row.Cells[0].Value as string ?? "").Trim();
+            var val = (row.Cells[1].Value as string ?? "").Trim();
+            if (desc.Length == 0 && val.Length == 0) continue;
+            n++;
+            if (desc.Length == 0) return "Informe a descrição do item " + n + ".";
+            if (!Dinheiro.TentarLer(val, out var c)) return "Informe um valor válido para o item " + n + ".";
+            destino.Add(new ReciboItemDto { Descricao = desc, ValorCentavos = c });
+        }
+        if (destino.Count == 0) return "Adicione ao menos um item com descrição e valor.";
+        if (destino.Count > LimitesRecibo.MaxItens) return "Um recibo aceita no máximo " + LimitesRecibo.MaxItens + " itens.";
+        return null;
+    }
+
     void Visualizar()
     {
         if (!(cmbEmissor.SelectedItem is Opcao<EmissorDto> oe)) { Erros.Aviso(this, "Escolha o emissor."); return; }
         if (_contato == null) { Erros.Aviso(this, "Escolha o contato (botão Selecionar)."); return; }
-        if (!Dinheiro.TentarLer(txtValor.Text, out var centavos))
+
+        var itens = new List<ReciboItemDto>();
+        long centavos;
+        string referente;
+        if (chkItens.Checked)
         {
-            Erros.Aviso(this, "Informe um valor válido, por exemplo 450,00.");
-            txtValor.Focus();
-            return;
+            var erro = ColetarItens(itens);
+            if (erro != null) { Erros.Aviso(this, erro); grid.Focus(); return; }
+            centavos = itens.Sum(i => i.ValorCentavos);
+            if (centavos > 99_999_999_999L) { Erros.Aviso(this, "O total dos itens passa do limite de R$ 999.999.999,99."); return; }
+            referente = txtTitulo.Text.Trim();
         }
-        var referente = txtReferente.Text.Trim();
-        if (referente.Length == 0) { Erros.Aviso(this, "Informe a que se refere o recibo."); txtReferente.Focus(); return; }
+        else
+        {
+            if (!Dinheiro.TentarLer(txtValor.Text, out centavos))
+            {
+                Erros.Aviso(this, "Informe um valor válido, por exemplo 450,00.");
+                txtValor.Focus();
+                return;
+            }
+            referente = txtReferente.Text.Trim();
+            if (referente.Length == 0) { Erros.Aviso(this, "Informe a que se refere o recibo."); txtReferente.Focus(); return; }
+        }
 
         var req = new ReciboCriarReq
         {
@@ -160,6 +371,8 @@ public class ReciboForm : Dialogo
             Sentido = cmbSentido.SelectedIndex == 1 ? "RECEBIMENTO" : "PAGAMENTO",
             ValorCentavos = centavos,
             Referente = referente,
+            Itens = itens,
+            MostrarDocPagador = chkDocPagador.Checked,
             Data = dtData.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             Cidade = txtCidade.Text.Trim(),
             DuplicadoDe = _modelo?.Numero
@@ -175,6 +388,8 @@ public class ReciboForm : Dialogo
             ValorCentavos = centavos,
             ValorExtenso = Extenso.Moeda(centavos),
             Referente = referente,
+            Itens = itens,
+            MostrarDocPagador = req.MostrarDocPagador,
             Data = req.Data,
             Cidade = req.Cidade
         };
@@ -269,7 +484,6 @@ public class HistoricoForm : Form
     readonly TextBox txtVMin = new() { Width = 80 };
     readonly TextBox txtVMax = new() { Width = 80 };
     readonly TextBox txtDesc = new() { Width = 240 };
-    readonly CheckBox chkCanc = new() { Text = "Incluir cancelados", AutoSize = true };
     readonly Button btnBuscar = UiLista.Botao("Buscar", 90);
     readonly Button btnLimpar = UiLista.Botao("Limpar", 90);
     readonly ListView lista = UiLista.Nova(("Nº", 60), ("Data", 85), ("Emissor", 170), ("Tipo", 90), ("Contato", 190),
@@ -301,7 +515,6 @@ public class HistoricoForm : Form
         Rot("até", 612, 42); Pos(txtVMax, 640, 42);
 
         Rot("Descrição", 10, 74); Pos(txtDesc, 76, 74);
-        Pos(chkCanc, 330, 76);
         Pos(btnBuscar, 480, 72); Pos(btnLimpar, 576, 72);
 
         var rodape = UiLista.Barra(DockStyle.Bottom, 44);
@@ -357,14 +570,14 @@ public class HistoricoForm : Form
     void Limpar()
     {
         txtNum.Text = ""; txtContato.Text = ""; txtDoc.Text = ""; txtVMin.Text = ""; txtVMax.Text = ""; txtDesc.Text = "";
-        chkPeriodo.Checked = false; chkCanc.Checked = false;
+        chkPeriodo.Checked = false;
         if (cmbEmissor.Items.Count > 0) cmbEmissor.SelectedIndex = 0;
         Buscar();
     }
 
     FiltroRecibos? MontarFiltro()
     {
-        var f = new FiltroRecibos { IncluirCancelados = chkCanc.Checked };
+        var f = new FiltroRecibos { IncluirCancelados = true };
         if (txtNum.Text.Trim().Length > 0)
         {
             if (!int.TryParse(txtNum.Text.Trim(), out var n)) { Erros.Aviso(this, "O número do recibo deve conter só dígitos."); return null; }
@@ -423,7 +636,7 @@ public class HistoricoForm : Form
             lista.EndUpdate();
             lblTotal.Text = itens.Count + (itens.Count == 1 ? " recibo" : " recibos") +
                 " • pagamentos: " + Dinheiro.Formatar(pagos) + " • recebimentos: " + Dinheiro.Formatar(recebidos) +
-                " (cancelados não somam)" + (itens.Count >= 1000 ? " • mostrando os 1000 mais recentes" : "");
+                " (cancelados, em vermelho, não somam)" + (itens.Count >= 1000 ? " • mostrando os 1000 mais recentes" : "");
             AtualizarBotoes();
         }
         catch (Exception ex)

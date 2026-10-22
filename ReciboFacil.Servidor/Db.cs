@@ -114,6 +114,33 @@ WHEN OLD.numero <> NEW.numero OR OLD.sentido <> NEW.sentido OR OLD.valor_centavo
 BEGIN
   SELECT RAISE(ABORT, 'Recibo emitido não pode ser alterado.');
 END;
+",
+        // 3 - Recibo com vários itens (descrição + valor); o total é a soma dos itens
+        @"
+ALTER TABLE recibos ADD COLUMN itens_json TEXT NOT NULL DEFAULT '[]';
+DROP TRIGGER recibos_sem_alteracao;
+CREATE TRIGGER recibos_sem_alteracao BEFORE UPDATE ON recibos
+WHEN OLD.numero <> NEW.numero OR OLD.sentido <> NEW.sentido OR OLD.valor_centavos <> NEW.valor_centavos
+  OR OLD.valor_extenso <> NEW.valor_extenso OR OLD.referente <> NEW.referente OR OLD.data_recibo <> NEW.data_recibo
+  OR OLD.cidade <> NEW.cidade OR OLD.emissor_json <> NEW.emissor_json OR OLD.contato_json <> NEW.contato_json
+  OR OLD.itens_json <> NEW.itens_json OR OLD.emitido_em <> NEW.emitido_em OR OLD.cancelado = 1
+BEGIN
+  SELECT RAISE(ABORT, 'Recibo emitido não pode ser alterado.');
+END;
+",
+        // 4 - Opção de mostrar o CPF/CNPJ do pagador no recibo (definida na emissão, vale também para a 2ª via)
+        @"
+ALTER TABLE recibos ADD COLUMN mostrar_doc_pagador INTEGER NOT NULL DEFAULT 0;
+DROP TRIGGER recibos_sem_alteracao;
+CREATE TRIGGER recibos_sem_alteracao BEFORE UPDATE ON recibos
+WHEN OLD.numero <> NEW.numero OR OLD.sentido <> NEW.sentido OR OLD.valor_centavos <> NEW.valor_centavos
+  OR OLD.valor_extenso <> NEW.valor_extenso OR OLD.referente <> NEW.referente OR OLD.data_recibo <> NEW.data_recibo
+  OR OLD.cidade <> NEW.cidade OR OLD.emissor_json <> NEW.emissor_json OR OLD.contato_json <> NEW.contato_json
+  OR OLD.itens_json <> NEW.itens_json OR OLD.mostrar_doc_pagador <> NEW.mostrar_doc_pagador
+  OR OLD.emitido_em <> NEW.emitido_em OR OLD.cancelado = 1
+BEGIN
+  SELECT RAISE(ABORT, 'Recibo emitido não pode ser alterado.');
+END;
 "
     };
 

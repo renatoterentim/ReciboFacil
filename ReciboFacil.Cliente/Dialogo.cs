@@ -32,6 +32,18 @@ public abstract class Dialogo : Form
         return l;
     }
 
+    // Insere um controle (painel, grade...) ocupando a largura útil, na próxima linha.
+    protected T Adicionar<T>(T c, int altura) where T : Control
+    {
+        c.Left = LX;
+        c.Top = y;
+        c.Width = CX + CW - LX;
+        c.Height = altura;
+        Controls.Add(c);
+        y += altura + 8;
+        return c;
+    }
+
     protected DateTimePicker Data(string rotulo)
     {
         Rotulo(rotulo, y);

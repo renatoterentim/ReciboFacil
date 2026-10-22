@@ -3,9 +3,9 @@ namespace ReciboFacil.Shared;
 public static class Constantes
 {
     public const string Programa = "ReciboFacil";
-    public const string VersaoApp = "1.1.0-etapa2";
+    public const string VersaoApp = "1.3.1";
     // Sobe quando a comunicação cliente/servidor muda de forma incompatível.
-    public const int Versao = 2;
+    public const int Versao = 4;
     public const string Administrador = "Administrador";
     public const string Operador = "Operador";
 }
@@ -102,14 +102,29 @@ public class ContatoDto
     public bool Ativo { get; set; } = true;
 }
 
+public class ReciboItemDto
+{
+    public string Descricao { get; set; } = "";
+    public long ValorCentavos { get; set; }
+}
+
+public static class LimitesRecibo
+{
+    public const int MaxItens = 8;
+    public const int MaxDescricaoItem = 100;
+}
+
 public class ReciboCriarReq
 {
     public int EmissorId { get; set; }
     public int ContatoId { get; set; }
     // PAGAMENTO: o emissor paga ao contato. RECEBIMENTO: o emissor recebe do contato.
     public string Sentido { get; set; } = "PAGAMENTO";
+    // Com itens, o valor total é a soma deles (o servidor recalcula) e "Referente" vira um título opcional.
     public long ValorCentavos { get; set; }
     public string Referente { get; set; } = "";
+    public List<ReciboItemDto> Itens { get; set; } = new();
+    public bool MostrarDocPagador { get; set; }
     public string Data { get; set; } = "";      // yyyy-MM-dd
     public string Cidade { get; set; } = "";
     public int? DuplicadoDe { get; set; }
@@ -127,6 +142,8 @@ public class ReciboDto
     public long ValorCentavos { get; set; }
     public string ValorExtenso { get; set; } = "";
     public string Referente { get; set; } = "";
+    public List<ReciboItemDto> Itens { get; set; } = new();
+    public bool MostrarDocPagador { get; set; }
     public string Data { get; set; } = "";
     public string Cidade { get; set; } = "";
     public string EmitidoEm { get; set; } = "";

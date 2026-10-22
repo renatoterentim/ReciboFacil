@@ -26,6 +26,18 @@ public static class ReciboDesenho
     static Parte DeContato(ContatoDto c) =>
         new Parte { Nome = c.Nome, Documento = c.Documento, Endereco = Junta(c.Endereco, CidadeUf(c.Cidade, c.Uf)) };
 
+    // Cidade com UF. Recibos antigos guardavam só a cidade: acrescenta a UF do emissor quando é a cidade dele.
+    public static string CidadeCompleta(ReciboDto r)
+    {
+        var c = (r.Cidade ?? "").Trim();
+        if (c.Length == 0) return "";
+        var uf = (r.Emissor?.Uf ?? "").Trim();
+        if (uf.Length == 2 && !c.Contains('/') && !c.Contains(" - ") && !c.Contains(',') &&
+            string.Equals(c, (r.Emissor?.Cidade ?? "").Trim(), StringComparison.OrdinalIgnoreCase))
+            return c + " - " + uf.ToUpperInvariant();
+        return c;
+    }
+
     static StringFormat Fmt(StringAlignment h, StringAlignment v, bool quebra) =>
         new StringFormat(quebra ? StringFormatFlags.LineLimit : StringFormatFlags.NoWrap)
         {
@@ -69,6 +81,7 @@ public static class ReciboDesenho
         using var fNeg = new Font("Arial", 11f, FontStyle.Bold, GraphicsUnit.Point);
         using var fPeq = new Font("Arial", 9f, FontStyle.Regular, GraphicsUnit.Point);
         using var fMini = new Font("Arial", 7f, FontStyle.Regular, GraphicsUnit.Point);
+        using var pLeve = new Pen(Color.FromArgb(175, 175, 175), 0.6f);
         using var esq = Fmt(StringAlignment.Near, StringAlignment.Center, false);
         using var centro = Fmt(StringAlignment.Center, StringAlignment.Center, false);
         using var dir = Fmt(StringAlignment.Far, StringAlignment.Center, false);
@@ -100,7 +113,15 @@ public static class ReciboDesenho
         // "Recebi de ..."
         float y0 = a.Y + 84f;
         g.DrawString(verbo, fRot, preto, new RectangleF(L, y0 + 2f, 100f, 22f), esq);
-        g.DrawString(pagador.Nome, fNeg, preto, new RectangleF(L + 104f, y0, W - 104f, 24f), esq);
+        bool docPagador = r.MostrarDocPagador && pagador.Documento.Length > 0;
+        float larguraDoc = docPagador ? 178f : 0f;
+        g.DrawString(pagador.Nome, fNeg, preto, new RectangleF(L + 104f, y0, W - 104f - larguraDoc, 24f), esq);
+        if (docPagador)
+        {
+            var dg = new string(pagador.Documento.Where(char.IsDigit).ToArray());
+            var rotuloDoc = dg.Length == 14 ? "CNPJ " : "CPF ";
+            g.DrawString(rotuloDoc + pagador.Documento, fPeq, preto, new RectangleF(R - larguraDoc, y0, larguraDoc, 24f), dir);
+        }
         g.DrawLine(pFino, L + 104f, y0 + 26f, R, y0 + 26f);
 
         // "a quantia de ..."
@@ -114,23 +135,64 @@ public static class ReciboDesenho
         // "Correspondente a ..."
         float y2 = y1 + 74f;
         g.DrawString("Correspondente a", fRot, preto, new RectangleF(L, y2, W, 18f), esq);
-        var boxR = new RectangleF(L, y2 + 18f, W, 86f);
-        g.DrawRectangle(pFino, boxR.X, boxR.Y, boxR.Width, boxR.Height);
-        g.DrawString(r.Referente, fTxt, preto,
-            new RectangleF(boxR.X + 6f, boxR.Y + 4f, boxR.Width - 12f, boxR.Height - 8f), quebra);
+        float altBox = 86f, folgaBox = 18f, folgaAss = 44f;
+        int nItens = r.Itens?.Count ?? 0;
+        if (nItens > 0)
+        {
+            // Vários itens: descrição à esquerda, valor à direita e o total no final (a caixa cresce, com limite).
+            bool temTitulo = !string.IsNullOrWhiteSpace(r.Referente);
+            const float pad = 4f, altTotal = 18f, disponivel = 136f;
+            float lh = Math.Min(17f, (disponivel - 2 * pad - altTotal - (temTitulo ? 2f : 0f)) / (nItens + (temTitulo ? 1 : 0)));
+            lh = Math.Max(lh, 11f);
+            float tam = Math.Min(10f, lh / 1.65f);
+            altBox = Math.Max(86f, 2 * pad + (temTitulo ? lh + 2f : 0f) + nItens * lh + altTotal);
+            folgaBox = 12f;
+            folgaAss = 38f;
+
+            var boxI = new RectangleF(L, y2 + 18f, W, altBox);
+            g.DrawRectangle(pFino, boxI.X, boxI.Y, boxI.Width, boxI.Height);
+            using var fItem = new Font("Arial", tam, FontStyle.Regular, GraphicsUnit.Point);
+            using var fItemNeg = new Font("Arial", tam, FontStyle.Bold, GraphicsUnit.Point);
+            float xi = boxI.X + 6f, wi = boxI.Width - 12f, wv = 120f;
+            float yy = boxI.Y + pad;
+            if (temTitulo)
+            {
+                var titulo = r.Referente.Replace("\r", "").Split('\n')[0];
+                g.DrawString(titulo, fItemNeg, preto, new RectangleF(xi, yy, wi, lh), esq);
+                yy += lh + 2f;
+            }
+            for (int i = 0; i < nItens; i++)
+            {
+                var it = r.Itens![i];
+                g.DrawString(it.Descricao, fItem, preto, new RectangleF(xi, yy, wi - wv - 8f, lh), esq);
+                g.DrawString(Dinheiro.Formatar(it.ValorCentavos), fItem, preto, new RectangleF(xi + wi - wv, yy, wv, lh), dir);
+                yy += lh;
+                if (i < nItens - 1) g.DrawLine(pLeve, xi, yy, xi + wi, yy);
+            }
+            g.DrawLine(pFino, xi, yy + 2f, xi + wi, yy + 2f);
+            g.DrawString("TOTAL", fNeg, preto, new RectangleF(xi, yy + 3f, 200f, altTotal - 2f), esq);
+            g.DrawString(Dinheiro.Formatar(r.ValorCentavos), fNeg, preto, new RectangleF(xi + wi - 160f, yy + 3f, 160f, altTotal - 2f), dir);
+        }
+        else
+        {
+            var boxR = new RectangleF(L, y2 + 18f, W, altBox);
+            g.DrawRectangle(pFino, boxR.X, boxR.Y, boxR.Width, boxR.Height);
+            g.DrawString(r.Referente, fTxt, preto,
+                new RectangleF(boxR.X + 6f, boxR.Y + 4f, boxR.Width - 12f, boxR.Height - 8f), quebra);
+        }
 
         // Cidade e data
-        float y3 = y2 + 122f;
+        float y3 = y2 + 18f + altBox + folgaBox;
         string dataTexto = DateTime.TryParseExact(r.Data, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d)
             ? d.ToString("d 'de' MMMM 'de' yyyy", Br)
             : r.Data;
-        var cidade = (r.Cidade ?? "").Trim().ToUpper(Br);
+        var cidade = CidadeCompleta(r).ToUpper(Br);
         var linha = cidade.Length > 0 ? cidade + ", " + dataTexto : dataTexto;
         g.DrawString(linha, fTxt, preto, new RectangleF(L, y3, W, 24f), centro);
         g.DrawLine(pFino, L + 60f, y3 + 26f, R - 60f, y3 + 26f);
 
         // Emitente (quem recebe) e assinatura
-        float y4 = y3 + 44f;
+        float y4 = y3 + folgaAss;
         float larguraEsq = W * 0.52f;
         void Linha(string rotulo, string valor, float yy)
         {
