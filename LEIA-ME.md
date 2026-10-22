@@ -1,4 +1,9 @@
-# ReciboFácil — versão 2.2.1
+# ReciboFácil — versão 2.2.2
+
+## Novidades da 2.2.2
+
+- O layout do recibo é **sempre o mesmo**, com ou sem chave Pix: o bloco do emitente tem 4 linhas fixas (Emitente, Endereço, CPF/CNPJ e Chave Pix) com o mesmo espaçamento.
+  Sem chave, a quarta linha fica em branco. Isso também muda levemente o espaçamento dos recibos sem Pix em relação à 2.2.1 e anteriores (um pouco mais compacto).
 
 ## Novidades da 2.2.1
 

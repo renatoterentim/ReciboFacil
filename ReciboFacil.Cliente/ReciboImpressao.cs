@@ -201,8 +201,9 @@ public static class ReciboDesenho
             g.DrawString(valor, fPeq, preto, new RectangleF(L + 80f, yy, larguraEsq - 80f, 20f), esq);
         }
         // Regra: a chave Pix impressa é sempre a de quem RECEBE o dinheiro (o emitente), seja o emissor ou o contato.
+        // O espaçamento é SEMPRE o mesmo, com ou sem chave Pix: o layout não muda (a 4ª linha só fica em branco).
         bool comPix = emitente.ChavePix.Length > 0;
-        float passo = comPix ? 18f : 22f;
+        const float passo = 18f;
         Linha("Emitente:", emitente.Nome, y4);
         Linha("Endereço:", emitente.Endereco, y4 + passo);
         Linha("CPF/CNPJ:", emitente.Documento, y4 + 2 * passo);
