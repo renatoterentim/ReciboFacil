@@ -1,4 +1,8 @@
-# ReciboFácil — versão 2.0.1 (Etapa 3: backup, restauração e instalador)
+# ReciboFácil — versão 2.0.2 (Etapa 3: backup, restauração e instalador)
+
+## Novidades da 2.0.2
+
+- O instalador abre o programa no final com o seu usuário normal (e não como administrador), evitando o travamento ao clicar em Concluir.
 
 ## Novidades da 2.0.1
 

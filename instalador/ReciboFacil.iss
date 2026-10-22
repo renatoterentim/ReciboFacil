@@ -67,7 +67,7 @@ Name: "{autoprograms}\{#AppNome} - Restaurar backup"; Filename: "{app}\Cliente\R
 Name: "{autodesktop}\{#AppNome}"; Filename: "{app}\Cliente\ReciboFacil.exe"; Tasks: atalhodesktop; Components: cliente
 
 [Run]
-Filename: "{app}\Cliente\ReciboFacil.exe"; Description: "Abrir o {#AppNome} agora"; Flags: postinstall nowait skipifsilent; Components: cliente
+Filename: "{app}\Cliente\ReciboFacil.exe"; Description: "Abrir o {#AppNome} agora"; Flags: postinstall nowait skipifsilent runasoriginaluser; Components: cliente
 
 [UninstallRun]
 Filename: "{sys}\sc.exe"; Parameters: "stop {#ServicoNome}"; Flags: runhidden; RunOnceId: "ParaServico"
