@@ -30,6 +30,11 @@ jobs:
           name: Instalador-x86
           path: instalador-saida/*-x86.exe
           if-no-files-found: warn
+      - name: Gerador de licencas (so para o desenvolvedor)
+        uses: actions/upload-artifact@v4
+        with:
+          name: GeradorLicenca
+          path: publicar/Gerador/GeradorLicenca.exe
       - name: Pastas (sem instalador)
         uses: actions/upload-artifact@v4
         with:
