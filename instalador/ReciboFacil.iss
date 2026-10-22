@@ -30,7 +30,7 @@ UninstallDisplayIcon={app}\Cliente\ReciboFacil.exe
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
-CloseApplications=yes
+CloseApplications=no
 RestartApplications=no
 #if Arq == "x64"
 ArchitecturesAllowed=x64compatible
@@ -132,6 +132,10 @@ end;
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 begin
   Result := '';
+  // Fecha o programa se estiver aberto (pedido educado primeiro, depois à força).
+  Executar(ExpandConstant('{sys}\taskkill.exe'), '/im ReciboFacil.exe');
+  Sleep(2500);
+  Executar(ExpandConstant('{sys}\taskkill.exe'), '/f /im ReciboFacil.exe');
   if WizardIsComponentSelected('servidor') then PararServidor();
 end;
 

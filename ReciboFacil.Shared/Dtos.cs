@@ -4,7 +4,7 @@ public static class Constantes
 {
     public const string Programa = "ReciboFacil";
     public const string Desenvolvedor = "Renato Terentim";
-    public const string VersaoApp = "2.0.2";
+    public const string VersaoApp = "2.0.3";
     // Sobe quando a comunicação cliente/servidor muda de forma incompatível.
     public const int Versao = 4;
     // Quantidade de migrações do banco (Db.Migracoes). A ferramenta de restauração usa para recusar backups de versão mais nova.

@@ -1,4 +1,8 @@
-# ReciboFácil — versão 2.0.2 (Etapa 3: backup, restauração e instalador)
+# ReciboFácil — versão 2.0.3 (Etapa 3: backup, restauração e instalador)
+
+## Novidades da 2.0.3
+
+- O instalador não usa mais o fechamento automático do Windows (que podia travar no final); ele mesmo fecha o programa e para o servidor.
 
 ## Novidades da 2.0.2
 
