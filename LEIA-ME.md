@@ -1,4 +1,8 @@
-# ReciboFácil — versão 2.0.4 (Etapa 3: backup, restauração e instalador)
+# ReciboFácil — versão 2.0.5 (Etapa 3: backup, restauração e instalador)
+
+## Novidades da 2.0.5
+
+- Corrigido: o botão **Fechar** da ferramenta de restauração não fechava a janela.
 
 ## Novidades da 2.0.4
 

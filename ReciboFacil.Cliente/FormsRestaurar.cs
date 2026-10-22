@@ -267,6 +267,7 @@ public class RestaurarForm : Form
         btnFechar.Left = 596; btnFechar.Top = 458;
         Controls.AddRange(new Control[] { btnRestaurar, btnFechar, log });
         CancelButton = btnFechar;
+        btnFechar.Click += (s, e) => Close();
         ClientSize = new Size(712, 500);
 
         txtDados.Text = Restauracao.SugerirPastaDados();
