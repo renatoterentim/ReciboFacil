@@ -1,4 +1,9 @@
-# ReciboFácil — versão 2.2.2
+# ReciboFácil — versão 2.2.3
+
+## Novidades da 2.2.3
+
+- O pacote agora já traz a **chave pública real** em `ReciboFacil.Servidor/chave-publica.txt`, então subir o zip inteiro ao GitHub não apaga mais a chave.
+  As licenças já emitidas continuam valendo (a chave é a mesma). Nunca crie outro par de chaves.
 
 ## Novidades da 2.2.2
 
