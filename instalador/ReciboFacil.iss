@@ -109,6 +109,32 @@ begin
   Result := Codigo;
 end;
 
+// Para o serviço e espera ele encerrar de verdade (até ~30 s). Se não encerrar, finaliza o processo.
+procedure PararServidor();
+var
+  i: Integer;
+  Saida: Integer;
+begin
+  Executar(ExpandConstant('{sys}\sc.exe'), 'stop {#ServicoNome}');
+  for i := 1 to 30 do
+  begin
+    Sleep(1000);
+    // sc query devolve 0 mesmo parado; por isso conferimos se o .exe ainda está em execução
+    if Executar(ExpandConstant('{sys}\cmd.exe'),
+        '/c tasklist /fi "imagename eq ReciboFacil.Servidor.exe" | find /i "ReciboFacil.Servidor.exe"') <> 0 then
+      Exit;
+  end;
+  Executar(ExpandConstant('{sys}\taskkill.exe'), '/f /im ReciboFacil.Servidor.exe');
+  Sleep(1000);
+end;
+
+// Chamado antes da verificação de arquivos em uso: com o servidor já parado, o instalador não pede para fechar nada.
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  Result := '';
+  if WizardIsComponentSelected('servidor') then PararServidor();
+end;
+
 procedure CopiaBanco();
 var
   Db, Pasta: String;
@@ -128,8 +154,7 @@ begin
 
   if CurStep = ssInstall then
   begin
-    Executar(ExpandConstant('{sys}\sc.exe'), 'stop {#ServicoNome}');
-    Sleep(4000);
+    PararServidor();
     CopiaBanco();
   end;
 
