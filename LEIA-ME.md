@@ -1,4 +1,8 @@
-# ReciboFácil — versão 2.0.0 (Etapa 3: backup, restauração e instalador)
+# ReciboFácil — versão 2.0.1 (Etapa 3: backup, restauração e instalador)
+
+## Novidades da 2.0.1
+
+- O instalador agora para o servidor sozinho ao atualizar, sem pedir para fechar aplicativos.
 
 ## Novidades da 2.0.0
 
