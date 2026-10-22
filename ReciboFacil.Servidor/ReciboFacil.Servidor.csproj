@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>ReciboFacil.Servidor</AssemblyName>
     <RootNamespace>ReciboFacil.Servidor</RootNamespace>
+    <ApplicationIcon>icone.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.*" />

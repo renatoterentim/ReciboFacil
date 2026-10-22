@@ -1,5 +1,18 @@
 # ReciboFácil — Etapa 2 (recibos) — versão 1.3.0
 
+## Novidades da 1.4.0
+
+- **Ícone personalizado** (recibo com selo de "pago") no `ReciboFacil.exe`, no `ReciboFacil.Servidor.exe` e nas janelas do programa.
+  O arquivo `icone.ico` está nas pastas `ReciboFacil.Cliente` e `ReciboFacil.Servidor` (suba as duas pastas ao GitHub).
+- Se o Windows continuar mostrando o ícone antigo no Explorer ou na barra de tarefas, é o cache de ícones: reinicie o computador
+  ou apague o atalho antigo e crie outro. O ícone de um atalho já criado só muda se o atalho apontar para o .exe novo.
+- Só o cliente (e o ícone do servidor) mudam; o banco de dados e a comunicação não mudam.
+
+## Novidades da 1.3.2
+
+- O histórico mostra uma coluna **"Motivo do cancelamento"** para os recibos cancelados. Passando o mouse sobre a linha aparece
+  quem cancelou e quando. Para o motivo aparecer, atualize também o **servidor** (o cliente sozinho mostra a coluna vazia).
+
 ## Novidades da 1.3.1
 
 - Os recibos cancelados agora aparecem sempre no histórico, em vermelho (não há mais a caixa "Incluir cancelados").

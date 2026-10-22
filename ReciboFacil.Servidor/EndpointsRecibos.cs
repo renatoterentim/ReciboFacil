@@ -187,7 +187,7 @@ public static class EndpointsRecibos
             long? valorMin, long? valorMax, string? descricao, bool? cancelados) =>
         {
             var sql = new StringBuilder(
-                "SELECT numero, data_recibo, sentido, emissor_nome, contato_nome, contato_documento, valor_centavos, referente, cancelado, emitido_por_login, itens_json " +
+                "SELECT numero, data_recibo, sentido, emissor_nome, contato_nome, contato_documento, valor_centavos, referente, cancelado, emitido_por_login, itens_json, motivo_cancelamento, cancelado_por_login, cancelado_em " +
                 "FROM recibos WHERE 1=1");
             var ps = new List<(string, object?)>();
             if (numero.HasValue) { sql.Append(" AND numero=$num"); ps.Add(("$num", (object?)numero.Value)); }
@@ -214,7 +214,10 @@ public static class EndpointsRecibos
                 {
                     Numero = r.GetInt32(0), Data = r.GetString(1), Sentido = r.GetString(2), EmissorNome = r.GetString(3),
                     ContatoNome = r.GetString(4), ContatoDocumento = r.GetString(5), ValorCentavos = r.GetInt64(6),
-                    Referente = ResumoTexto(r.GetString(7), LerItens(r.GetString(10))), Cancelado = r.GetInt32(8) == 1, EmitidoPor = r.GetString(9)
+                    Referente = ResumoTexto(r.GetString(7), LerItens(r.GetString(10))), Cancelado = r.GetInt32(8) == 1, EmitidoPor = r.GetString(9),
+                    Motivo = r.IsDBNull(11) ? "" : r.GetString(11),
+                    CanceladoPor = r.IsDBNull(12) ? "" : r.GetString(12),
+                    CanceladoEm = r.IsDBNull(13) ? "" : r.GetString(13)
                 };
                 if (termosContato.Length > 0 && !TodosOsTermos(item.ContatoNome, termosContato)) continue;
                 if (termosDesc.Length > 0 && !TodosOsTermos(item.Referente, termosDesc)) continue;

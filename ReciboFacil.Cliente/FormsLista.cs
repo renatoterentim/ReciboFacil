@@ -25,6 +25,7 @@ static class UiLista
         f.Font = new Font("Segoe UI", 9F);
         f.ClientSize = new Size(w, h);
         f.ShowInTaskbar = false;
+        if (App.Icone != null) f.Icon = App.Icone;
     }
 }
 

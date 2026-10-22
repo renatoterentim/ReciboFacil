@@ -486,8 +486,8 @@ public class HistoricoForm : Form
     readonly TextBox txtDesc = new() { Width = 240 };
     readonly Button btnBuscar = UiLista.Botao("Buscar", 90);
     readonly Button btnLimpar = UiLista.Botao("Limpar", 90);
-    readonly ListView lista = UiLista.Nova(("Nº", 60), ("Data", 85), ("Emissor", 170), ("Tipo", 90), ("Contato", 190),
-        ("CPF/CNPJ", 125), ("Valor", 100), ("Referente", 250), ("Situação", 80));
+    readonly ListView lista = UiLista.Nova(("Nº", 60), ("Data", 85), ("Emissor", 150), ("Tipo", 90), ("Contato", 180),
+        ("CPF/CNPJ", 125), ("Valor", 100), ("Referente", 220), ("Situação", 80), ("Motivo do cancelamento", 230));
     readonly Label lblTotal = new() { AutoSize = true, Margin = new Padding(12, 9, 3, 3) };
     readonly Button btnAbrir = UiLista.Botao("Abrir / 2ª via", 130);
     readonly Button btnDup = UiLista.Botao("Duplicar", 100);
@@ -496,8 +496,9 @@ public class HistoricoForm : Form
 
     public HistoricoForm()
     {
-        UiLista.Preparar(this, "Histórico de recibos", 1180, 640);
+        UiLista.Preparar(this, "Histórico de recibos", 1300, 640);
         lista.Columns[6].TextAlign = HorizontalAlignment.Right;
+        lista.ShowItemToolTips = true;
 
         var filtros = new Panel { Dock = DockStyle.Top, Height = 112 };
         void Rot(string texto, int x, int y) =>
@@ -626,9 +627,17 @@ public class HistoricoForm : Form
                 {
                     r.Numero.ToString(), data, r.EmissorNome, r.Sentido == "RECEBIMENTO" ? "Recebimento" : "Pagamento",
                     r.ContatoNome, r.ContatoDocumento, Dinheiro.Formatar(r.ValorCentavos), r.Referente,
-                    r.Cancelado ? "Cancelado" : "Emitido"
+                    r.Cancelado ? "Cancelado" : "Emitido",
+                    r.Cancelado ? r.Motivo : ""
                 }) { Tag = r };
-                if (r.Cancelado) item.ForeColor = Color.Firebrick;
+                if (r.Cancelado)
+                {
+                    item.ForeColor = Color.Firebrick;
+                    var quando = DateTime.TryParse(r.CanceladoEm, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var dc)
+                        ? dc.ToLocalTime().ToString("dd/MM/yyyy HH:mm", Br)
+                        : "";
+                    item.ToolTipText = "Cancelado por " + r.CanceladoPor + (quando.Length > 0 ? " em " + quando : "") + "\nMotivo: " + r.Motivo;
+                }
                 else if (r.Sentido == "RECEBIMENTO") recebidos += r.ValorCentavos;
                 else pagos += r.ValorCentavos;
                 lista.Items.Add(item);

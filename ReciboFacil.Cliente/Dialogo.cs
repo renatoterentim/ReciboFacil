@@ -19,6 +19,7 @@ public abstract class Dialogo : Form
         AutoScaleDimensions = new SizeF(96F, 96F);
         AutoScaleMode = AutoScaleMode.Dpi;
         Font = new Font("Segoe UI", 9F);
+        if (App.Icone != null) Icon = App.Icone;
     }
 
     void Rotulo(string texto, int yy) =>

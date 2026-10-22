@@ -14,6 +14,7 @@ public class MainForm : Form
         AutoScaleMode = AutoScaleMode.Dpi;
         Font = new Font("Segoe UI", 9F);
         ClientSize = new Size(900, 560);
+        if (App.Icone != null) Icon = App.Icone;
 
         var menu = new MenuStrip();
 

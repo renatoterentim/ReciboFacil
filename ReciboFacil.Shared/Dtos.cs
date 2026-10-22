@@ -3,7 +3,7 @@ namespace ReciboFacil.Shared;
 public static class Constantes
 {
     public const string Programa = "ReciboFacil";
-    public const string VersaoApp = "1.3.1";
+    public const string VersaoApp = "1.4.0";
     // Sobe quando a comunicação cliente/servidor muda de forma incompatível.
     public const int Versao = 4;
     public const string Administrador = "Administrador";
@@ -167,6 +167,9 @@ public class ReciboResumoDto
     public string Referente { get; set; } = "";
     public bool Cancelado { get; set; }
     public string EmitidoPor { get; set; } = "";
+    public string Motivo { get; set; } = "";
+    public string CanceladoPor { get; set; } = "";
+    public string CanceladoEm { get; set; } = "";
 }
 
 public class CancelarReq

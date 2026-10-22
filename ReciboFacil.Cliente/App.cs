@@ -42,6 +42,15 @@ public static class App
     public static MainForm? Principal;
     public static bool EhAdmin => Usuario != null && Usuario.Perfil == Constantes.Administrador;
     public const string Titulo = "ReciboFácil";
+
+    // Ícone do programa (o mesmo do .exe), usado em todas as janelas.
+    public static readonly Icon? Icone = CarregarIcone();
+
+    static Icon? CarregarIcone()
+    {
+        try { return Icon.ExtractAssociatedIcon(Application.ExecutablePath); }
+        catch { return null; }
+    }
 }
 
 public static class Erros
