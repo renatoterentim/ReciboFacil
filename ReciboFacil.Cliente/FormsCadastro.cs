@@ -15,8 +15,8 @@ public class ContatoEditForm : Dialogo
         txtNome = Texto("Nome *", 150);
         cmbOcupacao = Combo("Ocupação (pedreiro, pintor...)", true);
         txtDoc = Texto("CPF/CNPJ", 20);
-        txtTel = Texto("Telefone", 30);
-        txtTel2 = Texto("Telefone 2", 30);
+        txtTel = Telefone("Telefone");
+        txtTel2 = Telefone("Telefone 2");
         txtEmail = Texto("E-mail", 120);
         txtEnd = Texto("Endereço", 200);
         txtCidade = Texto("Cidade", 80);
@@ -95,8 +95,9 @@ public class EmissorEditForm : Dialogo
         var txtCidade = Texto("Cidade", 80);
         var txtUf = Texto("UF", 2);
         txtUf.Width = 60;
-        var txtTel = Texto("Telefone", 30);
+        var txtTel = Telefone("Telefone");
         var txtEmail = Texto("E-mail", 120);
+        var txtPix = Texto("Chave Pix", 120);
         var txtObs = Multi("Observações", 60);
         var chkAtivo = Check("Emissor ativo");
         chkAtivo.Checked = true;
@@ -106,7 +107,7 @@ public class EmissorEditForm : Dialogo
         {
             txtNome.Text = original.Nome; txtDoc.Text = original.Documento; txtEnd.Text = original.Endereco;
             txtCidade.Text = original.Cidade; txtUf.Text = original.Uf; txtTel.Text = original.Telefone;
-            txtEmail.Text = original.Email; txtObs.Text = original.Observacoes; chkAtivo.Checked = original.Ativo;
+            txtEmail.Text = original.Email; txtPix.Text = original.ChavePix; txtObs.Text = original.Observacoes; chkAtivo.Checked = original.Ativo;
         }
         else chkAtivo.Visible = false;
 
@@ -116,7 +117,7 @@ public class EmissorEditForm : Dialogo
             var d = new EmissorDto
             {
                 Nome = txtNome.Text, Documento = txtDoc.Text, Endereco = txtEnd.Text, Cidade = txtCidade.Text,
-                Uf = txtUf.Text, Telefone = txtTel.Text, Email = txtEmail.Text, Observacoes = txtObs.Text, Ativo = chkAtivo.Checked
+                Uf = txtUf.Text, Telefone = txtTel.Text, Email = txtEmail.Text, ChavePix = txtPix.Text, Observacoes = txtObs.Text, Ativo = chkAtivo.Checked
             };
             BtnOk.Enabled = false;
             try

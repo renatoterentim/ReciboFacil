@@ -20,6 +20,7 @@ if (string.IsNullOrWhiteSpace(builder.Configuration["Urls"]))
 try
 {
     Db.Migrar();
+    Db.AjustesUnicos();
 }
 catch (Exception ex)
 {

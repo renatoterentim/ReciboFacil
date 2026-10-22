@@ -1,4 +1,17 @@
-# ReciboFácil — versão 2.1.2 (licenças)
+# ReciboFácil — versão 2.2.1
+
+## Novidades da 2.2.1
+
+- **A chave Pix sai no recibo**, sempre a de quem **recebe o dinheiro**: no recibo de *Recebimento* é a do emissor, no de *Pagamento* é a do contato.
+  Aparece como "Chave Pix:" no bloco do emitente, só se a chave estiver cadastrada. A chave é congelada no recibo na emissão (recibos antigos não ganham chave do emissor;
+  os de Pagamento antigos mostram a chave que o contato tinha na época, se havia).
+
+## Novidades da 2.2.0
+
+- **Telefones padronizados** em contatos e emissores: `(00) 00000-0000` (celular) ou `(00) 0000-0000` (fixo). Ao sair do campo o programa já formata, e o servidor também padroniza ao salvar
+  (aceita +55, 0 na frente, com ou sem espaços e traços). Números internacionais, 0800 e fora do padrão ficam como digitados.
+  Os telefones já cadastrados são padronizados **uma única vez** na primeira inicialização do servidor novo (uma cópia de segurança do banco é feita antes).
+- **Chave Pix no cadastro do emissor** (campo novo; o banco ganha a coluna sozinho).
 
 ## Novidades da 2.1.2
 

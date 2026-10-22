@@ -153,6 +153,10 @@ CREATE TABLE configuracoes (
         // 6 - Emissor excluído (exclusão lógica: preserva o histórico dos recibos)
         @"
 ALTER TABLE emissores ADD COLUMN excluido INTEGER NOT NULL DEFAULT 0;
+",
+        // 7 - Chave Pix no cadastro do emissor
+        @"
+ALTER TABLE emissores ADD COLUMN chave_pix TEXT NOT NULL DEFAULT '';
 "
     };
 
@@ -170,6 +174,37 @@ ALTER TABLE emissores ADD COLUMN excluido INTEGER NOT NULL DEFAULT 0;
         cmd.CommandText = sql;
         foreach (var p in ps) cmd.Parameters.AddWithValue(p.Nome, p.Valor ?? DBNull.Value);
         return cmd;
+    }
+
+    // Ajustes feitos uma única vez sobre dados já existentes (ficam marcados em "configuracoes").
+    public static void AjustesUnicos()
+    {
+        using var c = Abrir();
+        using (var cmd = c.Cmd("SELECT 1 FROM configuracoes WHERE chave='fones_formatados'"))
+            if (cmd.ExecuteScalar() != null) return;
+
+        using var tx = c.BeginTransaction();
+        var ajustes = new List<(string Tabela, string Coluna, int Id, string Novo)>();
+        foreach (var (tabela, coluna) in new[] { ("contatos", "telefone"), ("contatos", "telefone2"), ("emissores", "telefone") })
+        {
+            using var cmd = c.Cmd("SELECT id, " + coluna + " FROM " + tabela + " WHERE " + coluna + " <> ''");
+            cmd.Transaction = tx;
+            using var r = cmd.ExecuteReader();
+            while (r.Read())
+            {
+                var atual = r.GetString(1);
+                var novo = FoneBr.Formatar(atual);
+                if (novo != atual) ajustes.Add((tabela, coluna, r.GetInt32(0), novo));
+            }
+        }
+        foreach (var a in ajustes)
+        {
+            using var up = c.Cmd("UPDATE " + a.Tabela + " SET " + a.Coluna + "=$v WHERE id=$id", ("$v", a.Novo), ("$id", a.Id));
+            up.Transaction = tx;
+            up.ExecuteNonQuery();
+        }
+        using (var ins = c.Cmd("INSERT INTO configuracoes(chave, valor) VALUES('fones_formatados','1')")) { ins.Transaction = tx; ins.ExecuteNonQuery(); }
+        tx.Commit();
     }
 
     public static void Migrar()

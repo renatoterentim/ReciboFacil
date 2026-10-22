@@ -15,16 +15,17 @@ public static class ReciboDesenho
         public string Nome = "";
         public string Documento = "";
         public string Endereco = "";
+        public string ChavePix = "";
     }
 
     static string Junta(string a, string b) => string.Join(" - ", new[] { a, b }.Where(x => x.Length > 0));
     static string CidadeUf(string cidade, string uf) => string.Join("/", new[] { cidade, uf }.Where(x => x.Length > 0));
 
     static Parte DeEmissor(EmissorDto e) =>
-        new Parte { Nome = e.Nome, Documento = e.Documento, Endereco = Junta(e.Endereco, CidadeUf(e.Cidade, e.Uf)) };
+        new Parte { Nome = e.Nome, Documento = e.Documento, Endereco = Junta(e.Endereco, CidadeUf(e.Cidade, e.Uf)), ChavePix = (e.ChavePix ?? "").Trim() };
 
     static Parte DeContato(ContatoDto c) =>
-        new Parte { Nome = c.Nome, Documento = c.Documento, Endereco = Junta(c.Endereco, CidadeUf(c.Cidade, c.Uf)) };
+        new Parte { Nome = c.Nome, Documento = c.Documento, Endereco = Junta(c.Endereco, CidadeUf(c.Cidade, c.Uf)), ChavePix = (c.ChavePix ?? "").Trim() };
 
     // Cidade com UF. Recibos antigos guardavam só a cidade: acrescenta a UF do emissor quando é a cidade dele.
     public static string CidadeCompleta(ReciboDto r)
@@ -199,9 +200,13 @@ public static class ReciboDesenho
             g.DrawString(rotulo, fPeq, cinza, new RectangleF(L, yy, 78f, 20f), esq);
             g.DrawString(valor, fPeq, preto, new RectangleF(L + 80f, yy, larguraEsq - 80f, 20f), esq);
         }
+        // Regra: a chave Pix impressa é sempre a de quem RECEBE o dinheiro (o emitente), seja o emissor ou o contato.
+        bool comPix = emitente.ChavePix.Length > 0;
+        float passo = comPix ? 18f : 22f;
         Linha("Emitente:", emitente.Nome, y4);
-        Linha("Endereço:", emitente.Endereco, y4 + 22f);
-        Linha("CPF/CNPJ:", emitente.Documento, y4 + 44f);
+        Linha("Endereço:", emitente.Endereco, y4 + passo);
+        Linha("CPF/CNPJ:", emitente.Documento, y4 + 2 * passo);
+        if (comPix) Linha("Chave Pix:", emitente.ChavePix, y4 + 3 * passo);
         float sx = L + W * 0.56f;
         g.DrawLine(pFino, sx, y4 + 36f, R, y4 + 36f);
         g.DrawString(emitente.Nome, fPeq, preto, new RectangleF(sx, y4 + 40f, R - sx, 20f), centro);

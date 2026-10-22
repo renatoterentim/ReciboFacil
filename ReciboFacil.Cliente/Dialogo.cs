@@ -25,6 +25,14 @@ public abstract class Dialogo : Form
     void Rotulo(string texto, int yy) =>
         Controls.Add(new Label { Text = texto, Left = LX, Top = yy + 3, Width = CX - LX - 6, Height = 20, AutoSize = false });
 
+    // Campo de telefone: ao sair do campo, padroniza para (00) 00000-0000.
+    protected TextBox Telefone(string rotulo)
+    {
+        var t = Texto(rotulo, 30);
+        t.Leave += (s, e) => t.Text = ReciboFacil.Shared.FoneBr.Formatar(t.Text);
+        return t;
+    }
+
     protected Label Nota(string texto, int altura = 36)
     {
         var l = new Label { Text = texto, Left = LX, Top = y, Width = CX + CW - LX, Height = altura, AutoSize = false };

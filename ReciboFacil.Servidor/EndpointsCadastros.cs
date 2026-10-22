@@ -6,7 +6,7 @@ namespace ReciboFacil.Servidor;
 
 public static class EndpointsCadastros
 {
-    const string ColsEmissor = "id, nome, documento, endereco, cidade, uf, telefone, email, observacoes, ativo, excluido";
+    const string ColsEmissor = "id, nome, documento, endereco, cidade, uf, telefone, email, observacoes, ativo, excluido, chave_pix";
     const string ColsContato = "id, nome, documento, telefone, telefone2, email, endereco, cidade, uf, ocupacao, chave_pix, observacoes, ativo";
 
     static string L(string? s) => (s ?? "").Trim();
@@ -15,7 +15,7 @@ public static class EndpointsCadastros
     {
         Id = r.GetInt32(0), Nome = r.GetString(1), Documento = r.GetString(2), Endereco = r.GetString(3),
         Cidade = r.GetString(4), Uf = r.GetString(5), Telefone = r.GetString(6), Email = r.GetString(7),
-        Observacoes = r.GetString(8), Ativo = r.GetInt32(9) == 1, Excluido = r.GetInt32(10) == 1
+        Observacoes = r.GetString(8), Ativo = r.GetInt32(9) == 1, Excluido = r.GetInt32(10) == 1, ChavePix = r.GetString(11)
     };
 
     static ContatoDto LerContato(SqliteDataReader r) => new()
@@ -30,7 +30,7 @@ public static class EndpointsCadastros
     static string? PrepararEmissor(EmissorDto d, out string digitos)
     {
         d.Nome = L(d.Nome); d.Endereco = L(d.Endereco); d.Cidade = L(d.Cidade); d.Uf = L(d.Uf).ToUpperInvariant();
-        d.Telefone = L(d.Telefone); d.Email = L(d.Email); d.Observacoes = L(d.Observacoes);
+        d.Telefone = FoneBr.Formatar(L(d.Telefone)); d.Email = L(d.Email); d.Observacoes = L(d.Observacoes); d.ChavePix = L(d.ChavePix);
         digitos = "";
         if (d.Nome.Length == 0) return "Informe o nome do emissor.";
         if (Doc.Digitos(d.Documento).Length == 0) return "Informe o CPF ou CNPJ do emissor.";
@@ -43,7 +43,7 @@ public static class EndpointsCadastros
 
     static string? PrepararContato(ContatoDto d, out string digitos)
     {
-        d.Nome = L(d.Nome); d.Telefone = L(d.Telefone); d.Telefone2 = L(d.Telefone2); d.Email = L(d.Email);
+        d.Nome = L(d.Nome); d.Telefone = FoneBr.Formatar(L(d.Telefone)); d.Telefone2 = FoneBr.Formatar(L(d.Telefone2)); d.Email = L(d.Email);
         d.Endereco = L(d.Endereco); d.Cidade = L(d.Cidade); d.Uf = L(d.Uf).ToUpperInvariant();
         d.Ocupacao = L(d.Ocupacao); d.ChavePix = L(d.ChavePix); d.Observacoes = L(d.Observacoes);
         digitos = "";
@@ -65,7 +65,7 @@ public static class EndpointsCadastros
     static (string, object?)[] ParamsEmissor(EmissorDto d, string digitos) => new (string, object?)[]
     {
         ("$n", d.Nome), ("$doc", d.Documento), ("$dig", digitos), ("$e", d.Endereco), ("$c", d.Cidade), ("$u", d.Uf),
-        ("$t", d.Telefone), ("$m", d.Email), ("$o", d.Observacoes), ("$a", d.Ativo ? 1 : 0), ("$agora", Agora())
+        ("$t", d.Telefone), ("$m", d.Email), ("$o", d.Observacoes), ("$px", d.ChavePix), ("$a", d.Ativo ? 1 : 0), ("$agora", Agora())
     };
 
     static (string, object?)[] ParamsContato(ContatoDto d, string digitos) => new (string, object?)[]
@@ -132,8 +132,8 @@ public static class EndpointsCadastros
             var bloqueio = LicencaServico.ValidarEmissor(c, d, dig, null);
             if (bloqueio != null) return Erro(403, "LICENCA_NECESSARIA", bloqueio);
             using var cmd = c.Cmd(
-                "INSERT INTO emissores(nome, documento, documento_digitos, endereco, cidade, uf, telefone, email, observacoes, ativo, criado_em, atualizado_em) " +
-                "VALUES($n,$doc,$dig,$e,$c,$u,$t,$m,$o,$a,$agora,$agora); SELECT last_insert_rowid();", ParamsEmissor(d, dig));
+                "INSERT INTO emissores(nome, documento, documento_digitos, endereco, cidade, uf, telefone, email, observacoes, chave_pix, ativo, criado_em, atualizado_em) " +
+                "VALUES($n,$doc,$dig,$e,$c,$u,$t,$m,$o,$px,$a,$agora,$agora); SELECT last_insert_rowid();", ParamsEmissor(d, dig));
             d.Id = Convert.ToInt32(cmd.ExecuteScalar());
             Db.Auditar(c, S(ctx), "CRIAR", "emissor", d.Id, d.Nome);
             return Results.Json(d);
@@ -153,7 +153,7 @@ public static class EndpointsCadastros
             if (bloqueio != null) return Erro(403, "LICENCA_NECESSARIA", bloqueio);
             var ps = ParamsEmissor(d, dig).Append(("$id", (object?)id)).ToArray();
             using var cmd = c.Cmd(
-                "UPDATE emissores SET nome=$n, documento=$doc, documento_digitos=$dig, endereco=$e, cidade=$c, uf=$u, telefone=$t, email=$m, observacoes=$o, ativo=$a, atualizado_em=$agora WHERE id=$id", ps);
+                "UPDATE emissores SET nome=$n, documento=$doc, documento_digitos=$dig, endereco=$e, cidade=$c, uf=$u, telefone=$t, email=$m, observacoes=$o, chave_pix=$px, ativo=$a, atualizado_em=$agora WHERE id=$id", ps);
             if (cmd.ExecuteNonQuery() == 0) return Erro(404, "NAO_ENCONTRADO", "Emissor não encontrado.");
             d.Id = id;
             Db.Auditar(c, S(ctx), "EDITAR", "emissor", id, d.Nome + (d.Ativo ? "" : " (inativo)"));
