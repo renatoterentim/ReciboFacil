@@ -22,7 +22,7 @@ public class ContatoEditForm : Dialogo
         txtCidade = Texto("Cidade", 80);
         txtUf = Texto("UF", 2);
         txtUf.Width = 60;
-        txtPix = Texto("Chave Pix", 120);
+        txtPix = ChavePix("Chave Pix");
         txtObs = Multi("Observações", 60);
         chkAtivo = Check("Contato ativo");
         chkAtivo.Checked = true;
@@ -97,7 +97,7 @@ public class EmissorEditForm : Dialogo
         txtUf.Width = 60;
         var txtTel = Telefone("Telefone");
         var txtEmail = Texto("E-mail", 120);
-        var txtPix = Texto("Chave Pix", 120);
+        var txtPix = ChavePix("Chave Pix");
         var txtObs = Multi("Observações", 60);
         var chkAtivo = Check("Emissor ativo");
         chkAtivo.Checked = true;

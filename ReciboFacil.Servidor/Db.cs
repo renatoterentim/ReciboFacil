@@ -179,13 +179,19 @@ ALTER TABLE emissores ADD COLUMN chave_pix TEXT NOT NULL DEFAULT '';
     // Ajustes feitos uma única vez sobre dados já existentes (ficam marcados em "configuracoes").
     public static void AjustesUnicos()
     {
+        Padronizar("fones_formatados", new[] { ("contatos", "telefone"), ("contatos", "telefone2"), ("emissores", "telefone") }, FoneBr.Formatar);
+        Padronizar("pix_formatados", new[] { ("contatos", "chave_pix"), ("emissores", "chave_pix") }, ChavePixBr.Formatar);
+    }
+
+    static void Padronizar(string marca, (string Tabela, string Coluna)[] colunas, Func<string?, string> formatar)
+    {
         using var c = Abrir();
-        using (var cmd = c.Cmd("SELECT 1 FROM configuracoes WHERE chave='fones_formatados'"))
+        using (var cmd = c.Cmd("SELECT 1 FROM configuracoes WHERE chave=$k", ("$k", marca)))
             if (cmd.ExecuteScalar() != null) return;
 
         using var tx = c.BeginTransaction();
         var ajustes = new List<(string Tabela, string Coluna, int Id, string Novo)>();
-        foreach (var (tabela, coluna) in new[] { ("contatos", "telefone"), ("contatos", "telefone2"), ("emissores", "telefone") })
+        foreach (var (tabela, coluna) in colunas)
         {
             using var cmd = c.Cmd("SELECT id, " + coluna + " FROM " + tabela + " WHERE " + coluna + " <> ''");
             cmd.Transaction = tx;
@@ -193,7 +199,7 @@ ALTER TABLE emissores ADD COLUMN chave_pix TEXT NOT NULL DEFAULT '';
             while (r.Read())
             {
                 var atual = r.GetString(1);
-                var novo = FoneBr.Formatar(atual);
+                var novo = formatar(atual);
                 if (novo != atual) ajustes.Add((tabela, coluna, r.GetInt32(0), novo));
             }
         }
@@ -203,7 +209,7 @@ ALTER TABLE emissores ADD COLUMN chave_pix TEXT NOT NULL DEFAULT '';
             up.Transaction = tx;
             up.ExecuteNonQuery();
         }
-        using (var ins = c.Cmd("INSERT INTO configuracoes(chave, valor) VALUES('fones_formatados','1')")) { ins.Transaction = tx; ins.ExecuteNonQuery(); }
+        using (var ins = c.Cmd("INSERT INTO configuracoes(chave, valor) VALUES($k,'1')", ("$k", marca))) { ins.Transaction = tx; ins.ExecuteNonQuery(); }
         tx.Commit();
     }
 

@@ -1,4 +1,11 @@
-# ReciboFácil — versão 2.2.3
+# ReciboFácil — versão 2.3.0
+
+## Novidades da 2.3.0
+
+- **Chave Pix padronizada** (contatos e emissores): CPF com pontos (`000.000.000-00`), CNPJ formatado, celular como telefone (`(00) 00000-0000`);
+  **e-mail e chave aleatória ficam como digitados**. O ajuste acontece ao sair do campo e ao salvar, e as chaves já cadastradas são padronizadas uma vez na primeira inicialização do servidor novo.
+  Quando são 11 números sem pontuação, o programa confere os dígitos do CPF: se for um CPF válido, formata como CPF; senão, se parecer celular (3º dígito 9), formata como telefone.
+  Se a chave for um celular que por acaso também seja um CPF válido, digite com `(DDD)` ou `+55` para ser tratada como telefone.
 
 ## Novidades da 2.2.3
 

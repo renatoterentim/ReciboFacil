@@ -33,6 +33,14 @@ public abstract class Dialogo : Form
         return t;
     }
 
+    // Campo de chave Pix: ao sair do campo, padroniza (CPF com pontos, celular como telefone; e-mail e chave aleatória ficam como digitados).
+    protected TextBox ChavePix(string rotulo)
+    {
+        var t = Texto(rotulo, 120);
+        t.Leave += (s, e) => t.Text = ReciboFacil.Shared.ChavePixBr.Formatar(t.Text);
+        return t;
+    }
+
     protected Label Nota(string texto, int altura = 36)
     {
         var l = new Label { Text = texto, Left = LX, Top = y, Width = CX + CW - LX, Height = altura, AutoSize = false };
