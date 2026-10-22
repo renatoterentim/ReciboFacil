@@ -29,16 +29,31 @@ public class ConexaoForm : Dialogo
 
 public class LoginForm : Dialogo
 {
-    readonly TextBox txtLogin, txtSenha;
+    readonly ComboBox txtLogin;
+    readonly TextBox txtSenha;
     public LoginResp? Resultado { get; private set; }
 
     public LoginForm() : base("ReciboFácil - Entrar")
     {
         StartPosition = FormStartPosition.CenterScreen;
         ShowInTaskbar = true;
-        txtLogin = Texto("Usuário", 30);
+        // Caixa de seleção com os usuários que já entraram neste computador; também aceita digitar outro.
+        var campo = Texto("Usuário", 30);
+        txtLogin = new ComboBox
+        {
+            Left = campo.Left, Top = campo.Top, Width = campo.Width, MaxLength = 30,
+            DropDownStyle = ComboBoxStyle.DropDown,
+            AutoCompleteMode = AutoCompleteMode.SuggestAppend,
+            AutoCompleteSource = AutoCompleteSource.ListItems,
+            TabIndex = campo.TabIndex
+        };
+        Controls.Remove(campo);
+        Controls.Add(txtLogin);
+        foreach (var u in App.Config.UltimosUsuarios ?? new()) txtLogin.Items.Add(u);
+        if (txtLogin.Items.Count > 0) txtLogin.Text = (string)txtLogin.Items[0]!;
         txtSenha = Texto("Senha", 100, true);
         Nota("Servidor: " + App.Config.Servidor, 20);
+        Shown += (s, e) => (txtLogin.Text.Length > 0 ? txtSenha : (Control)txtLogin).Focus();
         Fim("Entrar");
 
         var btnServidor = new Button { Text = "Servidor...", Width = 90, Height = 28, Left = LX, Top = BtnOk.Top };
@@ -61,6 +76,7 @@ public class LoginForm : Dialogo
             try
             {
                 Resultado = await App.Api.Login(txtLogin.Text.Trim(), txtSenha.Text);
+                App.Config.LembrarUsuario(Resultado.Login.Length > 0 ? Resultado.Login : txtLogin.Text.Trim());
                 DialogResult = DialogResult.OK;
             }
             catch (Exception ex)

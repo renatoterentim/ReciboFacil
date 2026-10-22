@@ -8,6 +8,17 @@ public class ConfigCliente
     public string Servidor { get; set; } = "http://localhost:5180";
     public bool Configurado { get; set; }
     public int UltimoEmissorId { get; set; }
+    // Logins que já entraram neste computador (o mais recente primeiro). Nunca guarda senha.
+    public List<string> UltimosUsuarios { get; set; } = new();
+
+    public void LembrarUsuario(string login)
+    {
+        UltimosUsuarios ??= new();
+        UltimosUsuarios.RemoveAll(u => string.Equals(u, login, StringComparison.OrdinalIgnoreCase));
+        UltimosUsuarios.Insert(0, login);
+        if (UltimosUsuarios.Count > 8) UltimosUsuarios.RemoveRange(8, UltimosUsuarios.Count - 8);
+        Salvar();
+    }
 
     static string Caminho => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ReciboFacil", "cliente.json");

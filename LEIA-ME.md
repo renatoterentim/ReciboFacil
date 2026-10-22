@@ -1,4 +1,8 @@
-# ReciboFácil — versão 2.0.3 (Etapa 3: backup, restauração e instalador)
+# ReciboFácil — versão 2.0.4 (Etapa 3: backup, restauração e instalador)
+
+## Novidades da 2.0.4
+
+- Na tela de entrada, o campo **Usuário** virou uma caixa suspensa com os usuários que já entraram *neste computador* (o último já vem preenchido e o cursor vai direto para a senha). Também dá para digitar outro usuário. A lista fica só no computador; o servidor não revela nomes de usuários.
 
 ## Novidades da 2.0.3
 
