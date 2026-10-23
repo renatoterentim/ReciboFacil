@@ -1,4 +1,8 @@
-# ReciboFácil — versão 2.3.1
+# ReciboFácil — versão 2.3.2
+
+## Novidades da 2.3.2
+
+- Corrigido erro de compilação introduzido na 2.3.1 (Db.cs).
 
 ## Novidades da 2.3.1
 

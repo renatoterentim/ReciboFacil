@@ -7,7 +7,7 @@ public static class Constantes
     public const string ContatoTelefone = "(17) 99178-8011";   // WhatsApp
     public const string ContatoWhatsApp = "5517991788011";     // só dígitos, com DDI, para o link wa.me
     public const string ContatoEmail = "renatoterentim@gmail.com";
-    public const string VersaoApp = "2.3.1";
+    public const string VersaoApp = "2.3.2";
     // Sobe quando a comunicação cliente/servidor muda de forma incompatível.
     public const int Versao = 4;
     // Quantidade de migrações do banco (Db.Migracoes). A ferramenta de restauração usa para recusar backups de versão mais nova.

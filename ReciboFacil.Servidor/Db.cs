@@ -179,8 +179,8 @@ ALTER TABLE emissores ADD COLUMN chave_pix TEXT NOT NULL DEFAULT '';
     // Ajustes feitos uma única vez sobre dados já existentes (ficam marcados em "configuracoes").
     public static void AjustesUnicos()
     {
-        Padronizar("fones_formatados", new[] { ("contatos", "telefone"), ("contatos", "telefone2"), ("emissores", "telefone") }, FoneBr.Formatar);
-        Padronizar("pix_formatados", new[] { ("contatos", "chave_pix"), ("emissores", "chave_pix") }, ChavePixBr.Formatar);
+        Padronizar("fones_formatados", new[] { ("contatos", "telefone"), ("contatos", "telefone2"), ("emissores", "telefone") }, t => FoneBr.Formatar(t));
+        Padronizar("pix_formatados", new[] { ("contatos", "chave_pix"), ("emissores", "chave_pix") }, t => ChavePixBr.Formatar(t));
     }
 
     static void Padronizar(string marca, (string Tabela, string Coluna)[] colunas, Func<string?, string> formatar)
