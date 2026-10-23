@@ -30,7 +30,7 @@ public static class EndpointsCadastros
     static string? PrepararEmissor(EmissorDto d, out string digitos)
     {
         d.Nome = L(d.Nome); d.Endereco = L(d.Endereco); d.Cidade = L(d.Cidade); d.Uf = L(d.Uf).ToUpperInvariant();
-        d.Telefone = FoneBr.Formatar(L(d.Telefone)); d.Email = L(d.Email); d.Observacoes = L(d.Observacoes); d.ChavePix = ChavePixBr.Formatar(L(d.ChavePix));
+        d.Telefone = FoneBr.Formatar(L(d.Telefone)); d.Email = L(d.Email); d.Observacoes = L(d.Observacoes); d.ChavePix = ChavePixBr.Formatar(L(d.ChavePix), false);
         digitos = "";
         if (d.Nome.Length == 0) return "Informe o nome do emissor.";
         if (Doc.Digitos(d.Documento).Length == 0) return "Informe o CPF ou CNPJ do emissor.";
@@ -45,7 +45,7 @@ public static class EndpointsCadastros
     {
         d.Nome = L(d.Nome); d.Telefone = FoneBr.Formatar(L(d.Telefone)); d.Telefone2 = FoneBr.Formatar(L(d.Telefone2)); d.Email = L(d.Email);
         d.Endereco = L(d.Endereco); d.Cidade = L(d.Cidade); d.Uf = L(d.Uf).ToUpperInvariant();
-        d.Ocupacao = L(d.Ocupacao); d.ChavePix = ChavePixBr.Formatar(L(d.ChavePix)); d.Observacoes = L(d.Observacoes);
+        d.Ocupacao = L(d.Ocupacao); d.ChavePix = ChavePixBr.Formatar(L(d.ChavePix), false); d.Observacoes = L(d.Observacoes);
         digitos = "";
         if (d.Nome.Length == 0) return "Informe o nome do contato.";
         var erro = Doc.Normalizar(d.Documento, out var fmt, out digitos);

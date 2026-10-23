@@ -1,4 +1,11 @@
-# ReciboFácil — versão 2.3.0
+# ReciboFácil — versão 2.3.1
+
+## Novidades da 2.3.1
+
+- **Tipo da chave Pix**: ao lado do campo há um seletor (Automático, CPF, CNPJ, Celular, E-mail, Aleatória). Escolhendo o tipo, a chave é formatada e validada por ele
+  (CPF/CNPJ conferem os dígitos; celular exige DDD + número; e-mail precisa de @; aleatória precisa do formato UUID). Se não conferir, aparece um aviso ao lado do campo e,
+  ao salvar, o programa pergunta se quer salvar mesmo assim. Ao abrir um cadastro, o tipo é reconhecido pela formatação da chave salva (não há campo novo no banco).
+  O servidor deixou de "adivinhar" números soltos ao salvar; só o ajuste único dos dados antigos usa a adivinhação.
 
 ## Novidades da 2.3.0
 

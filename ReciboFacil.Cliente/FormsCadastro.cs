@@ -53,6 +53,7 @@ public class ContatoEditForm : Dialogo
         BtnOk.Click += async (s, e) =>
         {
             if (txtNome.Text.Trim().Length == 0) { Erros.Aviso(this, "Informe o nome do contato."); txtNome.Focus(); return; }
+            if (!ChavePixConfere(txtPix)) { txtPix.Focus(); return; }
             var d = new ContatoDto
             {
                 Nome = txtNome.Text, Ocupacao = cmbOcupacao.Text, Documento = txtDoc.Text, Telefone = txtTel.Text,
@@ -114,6 +115,7 @@ public class EmissorEditForm : Dialogo
         BtnOk.Click += async (s, e) =>
         {
             if (txtNome.Text.Trim().Length == 0) { Erros.Aviso(this, "Informe o nome do emissor."); txtNome.Focus(); return; }
+            if (!ChavePixConfere(txtPix)) { txtPix.Focus(); return; }
             var d = new EmissorDto
             {
                 Nome = txtNome.Text, Documento = txtDoc.Text, Endereco = txtEnd.Text, Cidade = txtCidade.Text,

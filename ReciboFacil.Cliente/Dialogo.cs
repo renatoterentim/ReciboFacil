@@ -33,12 +33,44 @@ public abstract class Dialogo : Form
         return t;
     }
 
-    // Campo de chave Pix: ao sair do campo, padroniza (CPF com pontos, celular como telefone; e-mail e chave aleatória ficam como digitados).
+    readonly Dictionary<TextBox, (ComboBox Tipo, ErrorProvider Erro)> _pix = new();
+
+    // Campo de chave Pix com seletor de tipo (Automático, CPF, CNPJ, Celular, E-mail, Aleatória).
+    // Ao sair do campo (ou trocar o tipo) a chave é padronizada; se não confere com o tipo, aparece um aviso ao lado do campo.
     protected TextBox ChavePix(string rotulo)
     {
         var t = Texto(rotulo, 120);
-        t.Leave += (s, e) => t.Text = ReciboFacil.Shared.ChavePixBr.Formatar(t.Text);
+        t.Width = CW - 112;
+        var cmb = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Left = t.Left + t.Width + 6, Top = t.Top, Width = 106 };
+        cmb.Items.AddRange(ReciboFacil.Shared.ChavePixBr.Tipos);
+        cmb.SelectedIndex = 0;
+        Controls.Add(cmb);
+        var ep = new ErrorProvider { BlinkStyle = ErrorBlinkStyle.NeverBlink };
+        _pix[t] = (cmb, ep);
+
+        t.Leave += (s, e) => AplicarPix(t);
+        cmb.SelectedIndexChanged += (s, e) => AplicarPix(t);
+        // Ao abrir um cadastro existente, mostra o tipo reconhecido pela formatação da chave salva.
+        Shown += (s, e) =>
+        {
+            if (t.Text.Length > 0 && cmb.SelectedIndex == 0) cmb.SelectedIndex = ReciboFacil.Shared.ChavePixBr.Detectar(t.Text);
+        };
         return t;
+    }
+
+    string? AplicarPix(TextBox t)
+    {
+        var (cmb, ep) = _pix[t];
+        t.Text = ReciboFacil.Shared.ChavePixBr.Formatar(t.Text, cmb.SelectedIndex, out var erro);
+        ep.SetError(t, erro ?? "");
+        return erro;
+    }
+
+    // Use ao salvar: se a chave não confere com o tipo, pergunta se quer salvar mesmo assim.
+    protected bool ChavePixConfere(TextBox t)
+    {
+        var erro = AplicarPix(t);
+        return erro == null || Erros.Confirmar(this, erro + "\n\nSalvar mesmo assim?");
     }
 
     protected Label Nota(string texto, int altura = 36)

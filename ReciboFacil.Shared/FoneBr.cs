@@ -58,7 +58,9 @@ public static class ChavePixBr
     static string Cpf(string d) => d.Substring(0, 3) + "." + d.Substring(3, 3) + "." + d.Substring(6, 3) + "-" + d.Substring(9, 2);
     static string Cnpj(string d) => d.Substring(0, 2) + "." + d.Substring(2, 3) + "." + d.Substring(5, 3) + "/" + d.Substring(8, 4) + "-" + d.Substring(12, 2);
 
-    public static string Formatar(string? bruto)
+    // heuristica = false: só mexe quando há certeza (parênteses ou +55 indicam telefone); números soltos ficam como digitados.
+    // O cadastro usa false no servidor (o programa já formata pelo tipo escolhido); o ajuste único dos dados antigos usa true.
+    public static string Formatar(string? bruto, bool heuristica = true)
     {
         var t = (bruto ?? "").Trim();
         if (t.Length == 0) return "";
@@ -69,6 +71,7 @@ public static class ChavePixBr
         bool dicaTelefone = t.StartsWith("+") || t.Contains('(');
         if (dicaTelefone) return FoneBr.Formatar(t);
 
+        if (!heuristica) return t;
         if (d.Length == 14) return CnpjValido(d) ? Cnpj(d) : t;
         if (d.Length == 11)
         {
@@ -78,5 +81,60 @@ public static class ChavePixBr
         }
         if (d.Length == 10 || ((d.Length == 12 || d.Length == 13) && d.StartsWith("55"))) return FoneBr.Formatar(d);
         return t;
+    }
+
+    public static readonly string[] Tipos = { "Automático", "CPF", "CNPJ", "Celular", "E-mail", "Aleatória" };
+
+    // Formata conforme o tipo escolhido (índice de Tipos). "erro" vem preenchido quando o valor não confere com o tipo.
+    public static string Formatar(string? bruto, int tipo, out string? erro)
+    {
+        erro = null;
+        var t = (bruto ?? "").Trim();
+        if (t.Length == 0) return "";
+        var d = new string(t.Where(char.IsDigit).ToArray());
+        switch (tipo)
+        {
+            case 1:
+                if (CpfValido(d)) return Cpf(d);
+                erro = "CPF inválido. Confira os 11 números.";
+                return t;
+            case 2:
+                if (CnpjValido(d)) return Cnpj(d);
+                erro = "CNPJ inválido. Confira os 14 números.";
+                return t;
+            case 3:
+            {
+                var f = FoneBr.Formatar(t);
+                if (f.StartsWith("(")) return f;
+                erro = "Celular inválido. Informe DDD + número (ex.: 17 99999-9999).";
+                return t;
+            }
+            case 4:
+            {
+                int at = t.IndexOf('@');
+                if (at > 0 && t.IndexOf('.', at) > at + 1 && !t.Contains(' ')) return t;
+                erro = "E-mail inválido.";
+                return t;
+            }
+            case 5:
+                if (t.Length == 36 && Guid.TryParse(t, out _)) return t;
+                erro = "Chave aleatória inválida. Ela tem o formato xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.";
+                return t;
+            default:
+                return Formatar(t);
+        }
+    }
+
+    // Descobre o tipo de uma chave já formatada (para mostrar no seletor ao abrir o cadastro). 0 = não identificado.
+    public static int Detectar(string? valor)
+    {
+        var t = (valor ?? "").Trim();
+        if (t.Length == 0) return 0;
+        if (t.Contains('@')) return 4;
+        if (t.Length == 36 && Guid.TryParse(t, out _)) return 5;
+        if (System.Text.RegularExpressions.Regex.IsMatch(t, @"^\d{3}\.\d{3}\.\d{3}-\d{2}$")) return 1;
+        if (System.Text.RegularExpressions.Regex.IsMatch(t, @"^\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}$")) return 2;
+        if (t.StartsWith("(") || t.StartsWith("+")) return 3;
+        return 0;
     }
 }
